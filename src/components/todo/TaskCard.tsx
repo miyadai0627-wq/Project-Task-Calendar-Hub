@@ -1,3 +1,4 @@
+import { useDraggable } from "@dnd-kit/core";
 import { Clock } from "lucide-react";
 
 import { PriorityBadge } from "@/components/todo/PriorityBadge";
@@ -25,12 +26,17 @@ export function TaskCard({
   onSelect?: (task: Task) => void;
 }) {
   const estimate = formatMinutes(task.estimatedMinutes);
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `tray-${task.id}`,
+    data: { source: "tray", task },
+  });
 
   return (
     <article
-      className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm cursor-pointer hover:border-slate-300 hover:shadow-md"
-      role={onSelect ? "button" : undefined}
-      tabIndex={onSelect ? 0 : undefined}
+      ref={setNodeRef}
+      className={`rounded-lg border border-slate-200 bg-white p-3 shadow-sm cursor-grab active:cursor-grabbing hover:border-slate-300 hover:shadow-md ${
+        isDragging ? "opacity-40" : ""
+      }`}
       onClick={() => onSelect?.(task)}
       onKeyDown={(event) => {
         if (onSelect && (event.key === "Enter" || event.key === " ")) {
@@ -38,6 +44,8 @@ export function TaskCard({
           onSelect(task);
         }
       }}
+      {...listeners}
+      {...attributes}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">

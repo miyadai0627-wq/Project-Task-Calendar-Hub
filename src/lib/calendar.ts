@@ -79,3 +79,25 @@ export function gridHeightPx(): number {
 export function isSameDateKey(date: Date, dateKey: string): boolean {
   return toDateKey(date) === dateKey;
 }
+
+export function pxToMinutesFromGridStart(offsetPx: number): number {
+  const gridStartMinutes = CALENDAR_START_HOUR * 60;
+  return gridStartMinutes + (offsetPx / HOUR_HEIGHT_PX) * 60;
+}
+
+export function snapMinutes(minutes: number, step = 15): number {
+  return Math.round(minutes / step) * step;
+}
+
+export function clampMinutesToGrid(minutes: number): number {
+  const min = CALENDAR_START_HOUR * 60;
+  const max = CALENDAR_END_HOUR * 60;
+  return Math.min(Math.max(minutes, min), max);
+}
+
+export function minutesToTime(minutes: number): string {
+  const clamped = Math.max(0, Math.min(minutes, 24 * 60 - 1));
+  const hours = Math.floor(clamped / 60);
+  const mins = clamped % 60;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}

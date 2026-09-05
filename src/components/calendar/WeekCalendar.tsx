@@ -1,3 +1,4 @@
+import { useDroppable } from "@dnd-kit/core";
 import { format } from "date-fns";
 
 import { CalendarEventBlock } from "@/components/calendar/CalendarEventBlock";
@@ -14,18 +15,72 @@ import type { Project, Task } from "@/types";
 
 const scheduledStatuses = new Set(["scheduled", "in_progress"]);
 
+function CalendarDayColumn({
+  dateKey,
+  isToday,
+  hours,
+  dayTasks,
+  projects,
+  onToggleComplete,
+  onSelectTask,
+  onResize,
+}: {
+  dateKey: string;
+  isToday: boolean;
+  hours: number[];
+  dayTasks: Task[];
+  projects: Project[];
+  onToggleComplete?: (id: string) => void;
+  onSelectTask?: (task: Task) => void;
+  onResize?: (id: string, endTime: string) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `day-${dateKey}`,
+    data: { dateKey },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`relative border-r border-slate-200 last:border-r-0 ${
+        isToday ? "bg-blue-50/40" : ""
+      } ${isOver ? "bg-blue-100/60" : ""}`}
+    >
+      {hours.map((hour) => (
+        <div
+          key={`${dateKey}-${hour}`}
+          className="border-b border-slate-100"
+          style={{ height: HOUR_HEIGHT_PX }}
+        />
+      ))}
+      {dayTasks.map((task) => (
+        <CalendarEventBlock
+          key={task.id}
+          task={task}
+          projects={projects}
+          onToggleComplete={onToggleComplete}
+          onSelect={onSelectTask}
+          onResize={onResize}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function WeekCalendar({
   weekDays,
   tasks,
   projects,
   onToggleComplete,
   onSelectTask,
+  onResize,
 }: {
   weekDays: Date[];
   tasks: Task[];
   projects: Project[];
   onToggleComplete?: (id: string) => void;
   onSelectTask?: (task: Task) => void;
+  onResize?: (id: string, endTime: string) => void;
 }) {
   const hours = hourLabels();
   const todayKey = toDateKey(new Date());
@@ -83,29 +138,17 @@ export function WeekCalendar({
                 Boolean(task.startTime && task.endTime),
             );
             return (
-              <div
+              <CalendarDayColumn
                 key={dateKey}
-                className={`relative border-r border-slate-200 last:border-r-0 ${
-                  isSameDateKey(day, todayKey) ? "bg-blue-50/40" : ""
-                }`}
-              >
-                {hours.map((hour) => (
-                  <div
-                    key={`${dateKey}-${hour}`}
-                    className="border-b border-slate-100"
-                    style={{ height: HOUR_HEIGHT_PX }}
-                  />
-                ))}
-                {dayTasks.map((task) => (
-                  <CalendarEventBlock
-                    key={task.id}
-                    task={task}
-                    projects={projects}
-                    onToggleComplete={onToggleComplete}
-                    onSelect={onSelectTask}
-                  />
-                ))}
-              </div>
+                dateKey={dateKey}
+                isToday={isSameDateKey(day, todayKey)}
+                hours={hours}
+                dayTasks={dayTasks}
+                projects={projects}
+                onToggleComplete={onToggleComplete}
+                onSelectTask={onSelectTask}
+                onResize={onResize}
+              />
             );
           })}
         </div>

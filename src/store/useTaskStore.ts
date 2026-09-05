@@ -10,7 +10,7 @@ export type TaskDraft = Omit<Task, "id" | "createdAt" | "updatedAt" | "completed
 interface TaskStore {
   tasks: Task[];
   addTask: (draft: TaskDraft) => void;
-  updateTask: (id: TaskId, draft: TaskDraft) => void;
+  updateTask: (id: TaskId, patch: Partial<TaskDraft>) => void;
   deleteTask: (id: TaskId) => void;
   toggleCompletion: (id: TaskId) => void;
 }
@@ -35,17 +35,19 @@ export const useTaskStore = create<TaskStore>((set) => ({
       return { tasks: [...state.tasks, task] };
     }),
 
-  updateTask: (id, draft) =>
+  updateTask: (id, patch) =>
     set((state) => ({
       tasks: state.tasks.map((task) => {
         if (task.id !== id) {
           return task;
         }
-        const becomingCompleted = draft.status === "completed";
+        const nextStatus = patch.status ?? task.status;
+        const becomingCompleted = nextStatus === "completed";
         const wasCompleted = task.status === "completed";
         return {
           ...task,
-          ...draft,
+          ...patch,
+          status: nextStatus,
           updatedAt: nowIso(),
           completedAt: becomingCompleted
             ? (wasCompleted ? task.completedAt : nowIso())
