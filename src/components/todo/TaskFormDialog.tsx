@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { TaskDraft } from "@/store/useTaskStore";
 import type { Project, Task, TaskPriority, TaskStatus } from "@/types";
@@ -72,6 +72,16 @@ export function TaskFormDialog({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const needsSchedule = SCHEDULE_STATUSES.has(status);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();

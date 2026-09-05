@@ -25,7 +25,7 @@ import {
   shiftWeek,
   snapMinutes,
 } from "@/lib/calendar";
-import type { TodoTrayTabId } from "@/lib/constants";
+import type { ROUTINE_TEMPLATES, TodoTrayTabId } from "@/lib/constants";
 import { mockProjects } from "@/lib/mock-data";
 import { useTaskStore } from "@/store/useTaskStore";
 import type { Task } from "@/types";
@@ -113,6 +113,24 @@ export function AppShell() {
     });
   }
 
+  function handleApplyTemplate(
+    dateKey: string,
+    template: (typeof ROUTINE_TEMPLATES)[number],
+  ) {
+    addTask({
+      projectId: template.projectId,
+      title: template.title,
+      priority: template.priority,
+      status: "scheduled",
+      estimatedMinutes:
+        parseTimeToMinutes(template.endTime) -
+        parseTimeToMinutes(template.startTime),
+      scheduledDate: dateKey,
+      startTime: template.startTime,
+      endTime: template.endTime,
+    });
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -146,6 +164,7 @@ export function AppShell() {
             onToggleComplete={toggleCompletion}
             onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
             onResize={(id, endTime) => updateTask(id, { endTime })}
+            onApplyTemplate={handleApplyTemplate}
           />
         </div>
 
