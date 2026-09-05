@@ -12,11 +12,13 @@ export function TodoTray({
   projects,
   activeTab,
   onTabChange,
+  onSelectTask,
 }: {
   tasks: Task[];
   projects: Project[];
   activeTab: TodoTrayTabId;
   onTabChange: (tab: TodoTrayTabId) => void;
+  onSelectTask?: (task: Task) => void;
 }) {
   const visibleStatuses = TODO_TRAY_TABS.find((tab) => tab.id === activeTab)
     ?.statuses as readonly TaskStatus[] | undefined;
@@ -63,6 +65,7 @@ export function TodoTray({
               key={task.id}
               task={task}
               project={getProjectById(task.projectId, projects)}
+              onSelect={onSelectTask}
             />
           ))
         )}

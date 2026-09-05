@@ -15,11 +15,30 @@ function formatMinutes(minutes?: number): string | null {
   return rest === 0 ? `${hours}時間` : `${hours}時間${rest}分`;
 }
 
-export function TaskCard({ task, project }: { task: Task; project?: Project }) {
+export function TaskCard({
+  task,
+  project,
+  onSelect,
+}: {
+  task: Task;
+  project?: Project;
+  onSelect?: (task: Task) => void;
+}) {
   const estimate = formatMinutes(task.estimatedMinutes);
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+    <article
+      className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm cursor-pointer hover:border-slate-300 hover:shadow-md"
+      role={onSelect ? "button" : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onClick={() => onSelect?.(task)}
+      onKeyDown={(event) => {
+        if (onSelect && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onSelect(task);
+        }
+      }}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

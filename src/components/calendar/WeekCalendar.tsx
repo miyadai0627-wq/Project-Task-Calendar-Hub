@@ -18,10 +18,14 @@ export function WeekCalendar({
   weekDays,
   tasks,
   projects,
+  onToggleComplete,
+  onSelectTask,
 }: {
   weekDays: Date[];
   tasks: Task[];
   projects: Project[];
+  onToggleComplete?: (id: string) => void;
+  onSelectTask?: (task: Task) => void;
 }) {
   const hours = hourLabels();
   const todayKey = toDateKey(new Date());
@@ -97,6 +101,8 @@ export function WeekCalendar({
                     key={task.id}
                     task={task}
                     projects={projects}
+                    onToggleComplete={onToggleComplete}
+                    onSelect={onSelectTask}
                   />
                 ))}
               </div>

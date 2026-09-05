@@ -13,6 +13,7 @@ export function AppHeader({
   onPrevWeek,
   onThisWeek,
   onNextWeek,
+  onNewTask,
 }: {
   projects: Project[];
   selectedProjectId: string;
@@ -21,6 +22,7 @@ export function AppHeader({
   onPrevWeek: () => void;
   onThisWeek: () => void;
   onNextWeek: () => void;
+  onNewTask: () => void;
 }) {
   const activeProjects = projects.filter((project) => project.status === "active");
 
@@ -76,6 +78,7 @@ export function AppHeader({
         <p className="hidden text-sm text-slate-600 md:block">{formatWeekRange(weekDays)}</p>
         <button
           type="button"
+          onClick={onNewTask}
           className="inline-flex h-8 items-center gap-1 rounded-md bg-slate-900 px-3 text-sm font-medium text-white"
         >
           <Plus className="h-4 w-4" />
