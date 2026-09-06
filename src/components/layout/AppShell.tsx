@@ -14,6 +14,7 @@ import {
 
 import { WeekCalendar } from "@/components/calendar/WeekCalendar";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { MilestoneTimeline } from "@/components/timeline/MilestoneTimeline";
 import { TaskFormDialog } from "@/components/todo/TaskFormDialog";
 import { TodoTray } from "@/components/todo/TodoTray";
 import {
@@ -26,12 +27,13 @@ import {
   snapMinutes,
 } from "@/lib/calendar";
 import type { ROUTINE_TEMPLATES, TodoTrayTabId } from "@/lib/constants";
-import { mockProjects } from "@/lib/mock-data";
+import { mockMilestones, mockProjects } from "@/lib/mock-data";
 import { useTaskStore } from "@/store/useTaskStore";
 import type { Task } from "@/types";
 
 type TaskModalState = { mode: "create" | "edit"; task?: Task };
 type DragData = { source: "tray" | "event"; task: Task };
+type ViewMode = "calendar" | "timeline";
 
 const DEFAULT_DURATION_MINUTES = 30;
 const MIN_DURATION_MINUTES = 15;
@@ -42,6 +44,7 @@ export function AppShell() {
   const [activeTab, setActiveTab] = useState<TodoTrayTabId>("ready");
   const [taskModal, setTaskModal] = useState<TaskModalState | null>(null);
   const [activeDrag, setActiveDrag] = useState<Task | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("calendar");
 
   const tasks = useTaskStore((state) => state.tasks);
   const addTask = useTaskStore((state) => state.addTask);
@@ -61,6 +64,13 @@ export function AppShell() {
     }
     return tasks.filter((task) => task.projectId === selectedProjectId);
   }, [tasks, selectedProjectId]);
+
+  const visibleProjects = useMemo(() => {
+    if (selectedProjectId === "all") {
+      return mockProjects;
+    }
+    return mockProjects.filter((project) => project.id === selectedProjectId);
+  }, [selectedProjectId]);
 
   function closeModal() {
     setTaskModal(null);
@@ -148,6 +158,8 @@ export function AppShell() {
           onThisWeek={() => setAnchorDate(new Date(2026, 8, 5))}
           onNextWeek={() => setAnchorDate((current) => shiftWeek(current, 1))}
           onNewTask={() => setTaskModal({ mode: "create" })}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
         />
         <div className="flex min-h-0 flex-1">
           <TodoTray
@@ -157,15 +169,19 @@ export function AppShell() {
             onTabChange={setActiveTab}
             onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
           />
-          <WeekCalendar
-            weekDays={weekDays}
-            tasks={visibleTasks}
-            projects={mockProjects}
-            onToggleComplete={toggleCompletion}
-            onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
-            onResize={(id, endTime) => updateTask(id, { endTime })}
-            onApplyTemplate={handleApplyTemplate}
-          />
+          {viewMode === "calendar" ? (
+            <WeekCalendar
+              weekDays={weekDays}
+              tasks={visibleTasks}
+              projects={mockProjects}
+              onToggleComplete={toggleCompletion}
+              onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
+              onResize={(id, endTime) => updateTask(id, { endTime })}
+              onApplyTemplate={handleApplyTemplate}
+            />
+          ) : (
+            <MilestoneTimeline milestones={mockMilestones} projects={visibleProjects} />
+          )}
         </div>
 
         {taskModal ? (
