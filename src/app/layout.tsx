@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
 
 import "./globals.css";
 
@@ -26,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="h-full overflow-hidden bg-slate-100 font-sans text-slate-900">
-        {children}
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
+import { GoogleConnectButton } from "@/components/auth/GoogleConnectButton";
 import { formatWeekRange } from "@/lib/calendar";
 import type { Project } from "@/types";
 
@@ -110,6 +111,7 @@ export function AppHeader({
             </p>
           </>
         ) : null}
+        <GoogleConnectButton />
         <button
           type="button"
           onClick={onNewTask}

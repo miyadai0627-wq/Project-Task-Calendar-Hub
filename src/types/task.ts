@@ -28,4 +28,5 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  googleEventId?: string; // 連携先のGoogleカレンダーイベントID
 }

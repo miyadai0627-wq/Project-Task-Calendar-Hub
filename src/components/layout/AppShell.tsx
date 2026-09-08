@@ -202,8 +202,23 @@ export function AppShell() {
               closeModal();
             }}
             onDelete={(id) => {
+              const googleEventId = taskModal.task?.googleEventId;
+              if (googleEventId) {
+                fetch("/api/calendar/sync", {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ googleEventId }),
+                }).catch(() => {
+                  // ベストエフォート: Google側の削除に失敗してもローカル削除は続行する
+                });
+              }
               deleteTask(id);
               closeModal();
+            }}
+            onSynced={(eventId) => {
+              if (taskModal.task) {
+                updateTask(taskModal.task.id, { googleEventId: eventId });
+              }
             }}
           />
         ) : null}

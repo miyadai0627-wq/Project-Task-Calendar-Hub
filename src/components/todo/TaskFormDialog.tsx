@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { signIn, useSession } from "next-auth/react";
+
 import type { TaskDraft } from "@/store/useTaskStore";
 import type { Project, Task, TaskPriority, TaskStatus } from "@/types";
 
@@ -42,6 +44,7 @@ export function TaskFormDialog({
   onClose,
   onSubmit,
   onDelete,
+  onSynced,
 }: {
   mode: "create" | "edit";
   task?: Task;
@@ -50,7 +53,9 @@ export function TaskFormDialog({
   onClose: () => void;
   onSubmit: (draft: TaskDraft) => void;
   onDelete?: (id: string) => void;
+  onSynced?: (eventId: string) => void;
 }) {
+  const { data: session } = useSession();
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
   const [projectId, setProjectId] = useState(
@@ -70,8 +75,40 @@ export function TaskFormDialog({
   const [endTime, setEndTime] = useState(task?.endTime ?? "");
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [syncState, setSyncState] = useState<"idle" | "syncing" | "error">("idle");
 
   const needsSchedule = SCHEDULE_STATUSES.has(status);
+  const canSyncToGoogle =
+    mode === "edit" && Boolean(task) && needsSchedule && scheduledDate && startTime && endTime;
+
+  async function handleSyncToGoogle() {
+    if (!task) {
+      return;
+    }
+    setSyncState("syncing");
+    try {
+      const response = await fetch("/api/calendar/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || undefined,
+          scheduledDate,
+          startTime,
+          endTime,
+          googleEventId: task.googleEventId,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("sync_failed");
+      }
+      const data = (await response.json()) as { eventId: string };
+      onSynced?.(data.eventId);
+      setSyncState("idle");
+    } catch {
+      setSyncState("error");
+    }
+  }
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -291,6 +328,44 @@ export function TaskFormDialog({
                 </div>
               </div>
             </div>
+          ) : null}
+
+          {canSyncToGoogle ? (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5">
+              {session ? (
+                <>
+                  <span className="text-xs text-slate-500">
+                    {task?.googleEventId ? "Googleカレンダーと同期済み" : "Googleカレンダー未同期"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSyncToGoogle}
+                    disabled={syncState === "syncing"}
+                    className="h-7 shrink-0 rounded-md border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                  >
+                    {syncState === "syncing"
+                      ? "同期中…"
+                      : task?.googleEventId
+                        ? "更新する"
+                        : "同期する"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="text-xs text-slate-500">Googleカレンダーと未連携です</span>
+                  <button
+                    type="button"
+                    onClick={() => signIn("google")}
+                    className="h-7 shrink-0 rounded-md border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    連携する
+                  </button>
+                </>
+              )}
+            </div>
+          ) : null}
+          {syncState === "error" ? (
+            <p className="text-xs text-rose-600">Googleカレンダーへの同期に失敗しました</p>
           ) : null}
 
           {error ? <p className="text-xs text-rose-600">{error}</p> : null}
