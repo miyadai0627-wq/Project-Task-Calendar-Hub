@@ -3,36 +3,42 @@
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 import { GoogleConnectButton } from "@/components/auth/GoogleConnectButton";
-import { formatWeekRange } from "@/lib/calendar";
+import { CALENDAR_VIEW_MODES, type CalendarViewMode } from "@/lib/constants";
 import type { Project } from "@/types";
 
 export function AppHeader({
   projects,
   selectedProjectId,
   onProjectChange,
-  weekDays,
-  onPrevWeek,
-  onThisWeek,
-  onNextWeek,
+  dateRangeLabel,
+  onPrev,
+  onToday,
+  onNext,
+  todayLabel,
   onNewTask,
   viewMode,
   onViewModeChange,
+  calendarView,
+  onCalendarViewChange,
 }: {
   projects: Project[];
   selectedProjectId: string;
   onProjectChange: (projectId: string) => void;
-  weekDays: Date[];
-  onPrevWeek: () => void;
-  onThisWeek: () => void;
-  onNextWeek: () => void;
+  dateRangeLabel: string;
+  onPrev: () => void;
+  onToday: () => void;
+  onNext: () => void;
+  todayLabel: string;
   onNewTask: () => void;
   viewMode: "calendar" | "timeline";
   onViewModeChange: (mode: "calendar" | "timeline") => void;
+  calendarView: CalendarViewMode;
+  onCalendarViewChange: (mode: CalendarViewMode) => void;
 }) {
   const activeProjects = projects.filter((project) => project.status === "active");
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-4">
+    <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-2">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <p className="truncate text-sm font-semibold tracking-tight text-slate-900">
           Project Task & Calendar Hub
@@ -44,7 +50,7 @@ export function AppHeader({
           id="project-filter"
           value={selectedProjectId}
           onChange={(event) => onProjectChange(event.target.value)}
-          className="h-8 shrink-0 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-700"
+          className="h-8 shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700"
         >
           <option value="all">すべてのプロジェクト</option>
           {activeProjects.map((project) => (
@@ -55,14 +61,14 @@ export function AppHeader({
         </select>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
-        <div className="flex shrink-0 items-center whitespace-nowrap rounded-md border border-slate-200">
+        <div className="flex shrink-0 items-center whitespace-nowrap rounded-lg border border-slate-200 p-0.5">
           <button
             type="button"
             onClick={() => onViewModeChange("calendar")}
-            className={`h-8 px-3 text-xs font-medium ${
+            className={`h-7 rounded-md px-3 text-xs font-medium transition-colors ${
               viewMode === "calendar"
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:bg-slate-50"
+                ? "bg-sky-500 text-white"
+                : "text-slate-600 hover:bg-sky-50"
             }`}
           >
             カレンダー
@@ -70,44 +76,62 @@ export function AppHeader({
           <button
             type="button"
             onClick={() => onViewModeChange("timeline")}
-            className={`h-8 px-3 text-xs font-medium ${
+            className={`h-7 rounded-md px-3 text-xs font-medium transition-colors ${
               viewMode === "timeline"
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:bg-slate-50"
+                ? "bg-sky-500 text-white"
+                : "text-slate-600 hover:bg-sky-50"
             }`}
           >
             タイムライン
           </button>
         </div>
         {viewMode === "calendar" ? (
+          <div className="flex shrink-0 items-center whitespace-nowrap rounded-lg border border-slate-200 p-0.5">
+            {CALENDAR_VIEW_MODES.map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => onCalendarViewChange(mode.id)}
+                className={`h-7 rounded-md px-2.5 text-xs font-medium transition-colors ${
+                  calendarView === mode.id
+                    ? "bg-sky-500 text-white"
+                    : "text-slate-600 hover:bg-sky-50"
+                }`}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {viewMode === "calendar" ? (
           <>
-            <div className="flex shrink-0 items-center whitespace-nowrap rounded-md border border-slate-200">
+            <div className="flex shrink-0 items-center whitespace-nowrap rounded-lg border border-slate-200 p-0.5">
               <button
                 type="button"
-                onClick={onPrevWeek}
-                className="inline-flex h-8 w-8 items-center justify-center text-slate-600 hover:bg-slate-50"
-                aria-label="前週"
+                onClick={onPrev}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-600 hover:bg-sky-50"
+                aria-label="前へ"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 type="button"
-                onClick={onThisWeek}
-                className="h-8 px-3 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                onClick={onToday}
+                className="h-7 rounded-md px-3 text-xs font-medium text-slate-700 hover:bg-sky-50"
               >
-                今週
+                {todayLabel}
               </button>
               <button
                 type="button"
-                onClick={onNextWeek}
-                className="inline-flex h-8 w-8 items-center justify-center text-slate-600 hover:bg-slate-50"
-                aria-label="翌週"
+                onClick={onNext}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-600 hover:bg-sky-50"
+                aria-label="次へ"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
             <p className="hidden whitespace-nowrap text-sm text-slate-600 xl:block">
-              {formatWeekRange(weekDays)}
+              {dateRangeLabel}
             </p>
           </>
         ) : null}
@@ -115,7 +139,7 @@ export function AppHeader({
         <button
           type="button"
           onClick={onNewTask}
-          className="inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-md bg-slate-900 px-3 text-sm font-medium text-white"
+          className="inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-lg bg-sky-500 px-3 text-sm font-medium text-white transition-colors hover:bg-sky-600"
         >
           <Plus className="h-4 w-4" />
           新規タスク

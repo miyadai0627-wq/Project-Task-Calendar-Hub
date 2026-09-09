@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   DndContext,
@@ -12,21 +12,32 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 
-import { WeekCalendar } from "@/components/calendar/WeekCalendar";
+import { MonthCalendar } from "@/components/calendar/MonthCalendar";
+import { VerticalCalendar } from "@/components/calendar/VerticalCalendar";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MilestoneTimeline } from "@/components/timeline/MilestoneTimeline";
 import { TaskFormDialog } from "@/components/todo/TaskFormDialog";
 import { TodoTray } from "@/components/todo/TodoTray";
 import {
   clampMinutesToGrid,
+  formatDayRange,
+  formatMonthRange,
+  formatWeekRange,
+  getMonthGridDays,
   getWeekDays,
   minutesToTime,
   parseTimeToMinutes,
   pxToMinutesFromGridStart,
+  shiftDay,
+  shiftMonth,
   shiftWeek,
   snapMinutes,
 } from "@/lib/calendar";
-import type { ROUTINE_TEMPLATES, TodoTrayTabId } from "@/lib/constants";
+import type {
+  CalendarViewMode,
+  ROUTINE_TEMPLATES,
+  TodoTrayTabId,
+} from "@/lib/constants";
 import { mockMilestones, mockProjects } from "@/lib/mock-data";
 import { useTaskStore } from "@/store/useTaskStore";
 import type { Task } from "@/types";
@@ -37,26 +48,55 @@ type ViewMode = "calendar" | "timeline";
 
 const DEFAULT_DURATION_MINUTES = 30;
 const MIN_DURATION_MINUTES = 15;
+const DEFAULT_START_TIME = "09:00";
 
 export function AppShell() {
-  const [anchorDate, setAnchorDate] = useState(() => new Date(2026, 8, 5));
+  const [anchorDate, setAnchorDate] = useState(() => new Date());
   const [selectedProjectId, setSelectedProjectId] = useState("all");
   const [activeTab, setActiveTab] = useState<TodoTrayTabId>("ready");
   const [taskModal, setTaskModal] = useState<TaskModalState | null>(null);
   const [activeDrag, setActiveDrag] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("calendar");
+  const [calendarView, setCalendarView] = useState<CalendarViewMode>("week");
 
   const tasks = useTaskStore((state) => state.tasks);
+  const hasLoaded = useTaskStore((state) => state.hasLoaded);
+  const fetchTasks = useTaskStore((state) => state.fetchTasks);
   const addTask = useTaskStore((state) => state.addTask);
   const updateTask = useTaskStore((state) => state.updateTask);
   const deleteTask = useTaskStore((state) => state.deleteTask);
   const toggleCompletion = useTaskStore((state) => state.toggleCompletion);
 
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
-  const weekDays = useMemo(() => getWeekDays(anchorDate), [anchorDate]);
+  const visibleDays = useMemo(() => {
+    if (calendarView === "day") {
+      return [anchorDate];
+    }
+    if (calendarView === "month") {
+      return getMonthGridDays(anchorDate);
+    }
+    return getWeekDays(anchorDate);
+  }, [anchorDate, calendarView]);
+
+  const dateRangeLabel = useMemo(() => {
+    if (calendarView === "day") {
+      return formatDayRange(anchorDate);
+    }
+    if (calendarView === "month") {
+      return formatMonthRange(anchorDate);
+    }
+    return formatWeekRange(visibleDays);
+  }, [anchorDate, calendarView, visibleDays]);
+
+  const todayLabel =
+    calendarView === "day" ? "今日" : calendarView === "month" ? "今月" : "今週";
 
   const visibleTasks = useMemo(() => {
     if (selectedProjectId === "all") {
@@ -76,6 +116,22 @@ export function AppShell() {
     setTaskModal(null);
   }
 
+  function handlePrev() {
+    setAnchorDate((current) => {
+      if (calendarView === "day") return shiftDay(current, -1);
+      if (calendarView === "month") return shiftMonth(current, -1);
+      return shiftWeek(current, -1);
+    });
+  }
+
+  function handleNext() {
+    setAnchorDate((current) => {
+      if (calendarView === "day") return shiftDay(current, 1);
+      if (calendarView === "month") return shiftMonth(current, 1);
+      return shiftWeek(current, 1);
+    });
+  }
+
   function handleDragStart(event: DragStartEvent) {
     const data = event.active.data.current as DragData | undefined;
     setActiveDrag(data?.task ?? null);
@@ -90,8 +146,33 @@ export function AppShell() {
     }
 
     const data = active.data.current as DragData | undefined;
-    const dayData = over.data.current as { dateKey: string } | undefined;
+    const dayData = over.data.current as
+      | { dateKey: string; isMonthCell?: boolean }
+      | undefined;
     if (!data || !dayData) {
+      return;
+    }
+
+    if (dayData.isMonthCell) {
+      const startTime =
+        data.source === "event" ? (data.task.startTime ?? DEFAULT_START_TIME) : DEFAULT_START_TIME;
+      const durationMinutes =
+        data.source === "tray"
+          ? (data.task.estimatedMinutes ?? DEFAULT_DURATION_MINUTES)
+          : Math.max(
+              parseTimeToMinutes(data.task.endTime ?? "00:00") -
+                parseTimeToMinutes(data.task.startTime ?? "00:00"),
+              MIN_DURATION_MINUTES,
+            );
+      const startMinutes = clampMinutesToGrid(parseTimeToMinutes(startTime));
+      const endMinutes = clampMinutesToGrid(startMinutes + durationMinutes);
+
+      updateTask(data.task.id, {
+        scheduledDate: dayData.dateKey,
+        startTime: minutesToTime(startMinutes),
+        endTime: minutesToTime(endMinutes),
+        status: data.source === "tray" ? "scheduled" : data.task.status,
+      });
       return;
     }
 
@@ -148,39 +229,62 @@ export function AppShell() {
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveDrag(null)}
     >
-      <div className="flex h-screen flex-col bg-slate-100 text-slate-900">
+      <div className="flex h-screen flex-col bg-sky-50 text-slate-900">
         <AppHeader
           projects={mockProjects}
           selectedProjectId={selectedProjectId}
           onProjectChange={setSelectedProjectId}
-          weekDays={weekDays}
-          onPrevWeek={() => setAnchorDate((current) => shiftWeek(current, -1))}
-          onThisWeek={() => setAnchorDate(new Date(2026, 8, 5))}
-          onNextWeek={() => setAnchorDate((current) => shiftWeek(current, 1))}
+          dateRangeLabel={dateRangeLabel}
+          onPrev={handlePrev}
+          onToday={() => setAnchorDate(new Date())}
+          onNext={handleNext}
+          todayLabel={todayLabel}
           onNewTask={() => setTaskModal({ mode: "create" })}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          calendarView={calendarView}
+          onCalendarViewChange={setCalendarView}
         />
         <div className="flex min-h-0 flex-1">
-          <TodoTray
-            tasks={visibleTasks}
-            projects={mockProjects}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
-          />
-          {viewMode === "calendar" ? (
-            <WeekCalendar
-              weekDays={weekDays}
-              tasks={visibleTasks}
-              projects={mockProjects}
-              onToggleComplete={toggleCompletion}
-              onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
-              onResize={(id, endTime) => updateTask(id, { endTime })}
-              onApplyTemplate={handleApplyTemplate}
-            />
+          {!hasLoaded ? (
+            <div className="flex flex-1 items-center justify-center text-sm text-slate-400">
+              読み込み中…
+            </div>
           ) : (
-            <MilestoneTimeline milestones={mockMilestones} projects={visibleProjects} />
+            <>
+              <TodoTray
+                tasks={visibleTasks}
+                projects={mockProjects}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
+              />
+              {viewMode === "timeline" ? (
+                <MilestoneTimeline milestones={mockMilestones} projects={visibleProjects} />
+              ) : calendarView === "month" ? (
+                <MonthCalendar
+                  days={visibleDays}
+                  anchorDate={anchorDate}
+                  tasks={visibleTasks}
+                  projects={mockProjects}
+                  onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
+                  onSelectDay={(date) => {
+                    setAnchorDate(date);
+                    setCalendarView("day");
+                  }}
+                />
+              ) : (
+                <VerticalCalendar
+                  days={visibleDays}
+                  tasks={visibleTasks}
+                  projects={mockProjects}
+                  onToggleComplete={toggleCompletion}
+                  onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
+                  onResize={(id, endTime) => updateTask(id, { endTime })}
+                  onApplyTemplate={handleApplyTemplate}
+                />
+              )}
+            </>
           )}
         </div>
 
@@ -226,7 +330,7 @@ export function AppShell() {
 
       <DragOverlay>
         {activeDrag ? (
-          <div className="w-64 rounded-lg border border-slate-200 bg-white p-2.5 shadow-lg">
+          <div className="w-64 rounded-xl border border-sky-200 bg-white p-2.5 shadow-lg">
             <p className="truncate text-sm font-semibold text-slate-900">
               {activeDrag.title}
             </p>

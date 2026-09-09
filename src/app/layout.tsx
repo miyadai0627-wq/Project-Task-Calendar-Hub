@@ -26,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="h-full overflow-hidden bg-slate-100 font-sans text-slate-900">
+      <body className="h-full overflow-hidden bg-sky-50 font-sans text-slate-900">
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

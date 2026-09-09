@@ -56,6 +56,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (account) {
         return {
           ...token,
+          googleAccountId: account.providerAccountId,
           accessToken: account.access_token,
           refreshToken: account.refresh_token,
           expiresAt: account.expires_at,
@@ -69,6 +70,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return refreshAccessToken(token);
     },
     async session({ session, token }) {
+      session.googleAccountId = token.googleAccountId;
       session.accessToken = token.accessToken;
       session.error = token.error;
       return session;

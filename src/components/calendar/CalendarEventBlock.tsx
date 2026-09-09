@@ -86,7 +86,7 @@ export function CalendarEventBlock({
   return (
     <div
       ref={setNodeRef}
-      className={`absolute inset-x-1 overflow-hidden rounded-md border border-white/40 px-2 py-1 text-white shadow-sm cursor-grab active:cursor-grabbing ${
+      className={`absolute inset-x-1 overflow-hidden rounded-lg border border-white/40 px-2 py-1 text-white shadow-sm cursor-grab active:cursor-grabbing ${
         isDragging ? "opacity-40" : ""
       }`}
       style={{

@@ -42,9 +42,9 @@ export function TodoTray({
               key={tab.id}
               type="button"
               onClick={() => onTabChange(tab.id)}
-              className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-medium ${
+              className={`flex-1 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors ${
                 selected
-                  ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
+                  ? "bg-white text-sky-700 shadow-sm ring-1 ring-sky-200"
                   : "text-slate-500 hover:bg-white/70 hover:text-slate-800"
               }`}
             >
@@ -55,7 +55,7 @@ export function TodoTray({
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-3">
         {visibleTasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 px-3 py-10 text-center">
+          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 px-3 py-10 text-center">
             <Inbox className="h-5 w-5 text-slate-400" aria-hidden />
             <p className="text-xs text-slate-500">このタブにタスクはありません</p>
           </div>

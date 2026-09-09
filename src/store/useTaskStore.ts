@@ -1,97 +1,81 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
-import { mockTasks } from "@/lib/mock-data";
 import type { Task, TaskId } from "@/types";
 
-const STORAGE_KEY = "task-calendar-hub/tasks";
-
-export type TaskDraft = Omit<Task, "id" | "createdAt" | "updatedAt" | "completedAt">;
+export type TaskDraft = Omit<
+  Task,
+  "id" | "createdAt" | "updatedAt" | "completedAt" | "googleEventId"
+>;
 
 interface TaskStore {
   tasks: Task[];
-  addTask: (draft: TaskDraft) => void;
-  updateTask: (id: TaskId, patch: Partial<TaskDraft>) => void;
-  deleteTask: (id: TaskId) => void;
-  toggleCompletion: (id: TaskId) => void;
+  isLoading: boolean;
+  hasLoaded: boolean;
+  fetchTasks: () => Promise<void>;
+  addTask: (draft: TaskDraft) => Promise<void>;
+  updateTask: (id: TaskId, patch: Partial<TaskDraft & { googleEventId?: string }>) => Promise<void>;
+  deleteTask: (id: TaskId) => Promise<void>;
+  toggleCompletion: (id: TaskId) => Promise<void>;
 }
 
-function nowIso(): string {
-  return new Date().toISOString();
+async function parseJsonOrThrow(response: Response) {
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+  return response.json();
 }
 
-export const useTaskStore = create<TaskStore>()(
-  persist(
-    (set) => ({
-      tasks: mockTasks,
+export const useTaskStore = create<TaskStore>((set, get) => ({
+  tasks: [],
+  isLoading: false,
+  hasLoaded: false,
 
-      addTask: (draft) =>
-        set((state) => {
-          const timestamp = nowIso();
-          const task: Task = {
-            ...draft,
-            id: crypto.randomUUID(),
-            createdAt: timestamp,
-            updatedAt: timestamp,
-            completedAt: draft.status === "completed" ? timestamp : undefined,
-          };
-          return { tasks: [...state.tasks, task] };
-        }),
+  fetchTasks: async () => {
+    set({ isLoading: true });
+    try {
+      const response = await fetch("/api/tasks");
+      const tasks = (await parseJsonOrThrow(response)) as Task[];
+      set({ tasks, isLoading: false, hasLoaded: true });
+    } catch {
+      set({ isLoading: false, hasLoaded: true });
+    }
+  },
 
-      updateTask: (id, patch) =>
-        set((state) => ({
-          tasks: state.tasks.map((task) => {
-            if (task.id !== id) {
-              return task;
-            }
-            const nextStatus = patch.status ?? task.status;
-            const becomingCompleted = nextStatus === "completed";
-            const wasCompleted = task.status === "completed";
-            return {
-              ...task,
-              ...patch,
-              status: nextStatus,
-              updatedAt: nowIso(),
-              completedAt: becomingCompleted
-                ? (wasCompleted ? task.completedAt : nowIso())
-                : undefined,
-            };
-          }),
-        })),
+  addTask: async (draft) => {
+    const response = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(draft),
+    });
+    const task = (await parseJsonOrThrow(response)) as Task;
+    set((state) => ({ tasks: [...state.tasks, task] }));
+  },
 
-      deleteTask: (id) =>
-        set((state) => ({
-          tasks: state.tasks.filter((task) => task.id !== id),
-        })),
+  updateTask: async (id, patch) => {
+    const response = await fetch(`/api/tasks/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    const task = (await parseJsonOrThrow(response)) as Task;
+    set((state) => ({
+      tasks: state.tasks.map((existing) => (existing.id === id ? task : existing)),
+    }));
+  },
 
-      toggleCompletion: (id) =>
-        set((state) => ({
-          tasks: state.tasks.map((task) => {
-            if (task.id !== id) {
-              return task;
-            }
-            if (task.status === "completed") {
-              return {
-                ...task,
-                status: "scheduled",
-                completedAt: undefined,
-                updatedAt: nowIso(),
-              };
-            }
-            return {
-              ...task,
-              status: "completed",
-              completedAt: nowIso(),
-              updatedAt: nowIso(),
-            };
-          }),
-        })),
-    }),
-    {
-      name: STORAGE_KEY,
-      partialize: (state) => ({ tasks: state.tasks }),
-    },
-  ),
-);
+  deleteTask: async (id) => {
+    await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+    set((state) => ({ tasks: state.tasks.filter((task) => task.id !== id) }));
+  },
+
+  toggleCompletion: async (id) => {
+    const task = get().tasks.find((item) => item.id === id);
+    if (!task) {
+      return;
+    }
+    const nextStatus = task.status === "completed" ? "scheduled" : "completed";
+    await get().updateTask(id, { status: nextStatus });
+  },
+}));

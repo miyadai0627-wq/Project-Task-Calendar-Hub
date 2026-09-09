@@ -25,7 +25,7 @@ const PRIORITY_LABELS: Record<TaskPriority, string> = {
 const SCHEDULE_STATUSES = new Set<TaskStatus>(["scheduled", "in_progress"]);
 
 const inputClass =
-  "h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300";
+  "h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-300";
 const labelClass = "text-xs font-medium text-slate-600";
 
 function toNumberOrUndefined(value: string): number | undefined {
@@ -157,7 +157,7 @@ export function TaskFormDialog({
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-5 shadow-xl"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <h2 className="text-sm font-semibold text-slate-900">
@@ -288,7 +288,7 @@ export function TaskFormDialog({
           </div>
 
           {needsSchedule ? (
-            <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
               <div className="space-y-1">
                 <label className={labelClass} htmlFor="task-scheduled-date">
                   配置日
@@ -331,7 +331,7 @@ export function TaskFormDialog({
           ) : null}
 
           {canSyncToGoogle ? (
-            <div className="flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5">
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
               {session ? (
                 <>
                   <span className="text-xs text-slate-500">
@@ -341,7 +341,7 @@ export function TaskFormDialog({
                     type="button"
                     onClick={handleSyncToGoogle}
                     disabled={syncState === "syncing"}
-                    className="h-7 shrink-0 rounded-md border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                    className="h-7 shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-sky-50 disabled:opacity-50"
                   >
                     {syncState === "syncing"
                       ? "同期中…"
@@ -356,7 +356,7 @@ export function TaskFormDialog({
                   <button
                     type="button"
                     onClick={() => signIn("google")}
-                    className="h-7 shrink-0 rounded-md border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    className="h-7 shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-sky-50"
                   >
                     連携する
                   </button>
@@ -378,14 +378,14 @@ export function TaskFormDialog({
                     <span className="text-xs text-slate-600">削除しますか？</span>
                     <button
                       type="button"
-                      className="h-8 rounded-md bg-rose-600 px-2 text-xs font-medium text-white"
+                      className="h-8 rounded-lg bg-rose-500 px-2 text-xs font-medium text-white hover:bg-rose-600"
                       onClick={() => onDelete(task.id)}
                     >
                       削除する
                     </button>
                     <button
                       type="button"
-                      className="h-8 rounded-md border border-slate-200 px-2 text-xs text-slate-600"
+                      className="h-8 rounded-lg border border-slate-200 px-2 text-xs text-slate-600"
                       onClick={() => setConfirmingDelete(false)}
                     >
                       キャンセル
@@ -394,7 +394,7 @@ export function TaskFormDialog({
                 ) : (
                   <button
                     type="button"
-                    className="h-8 rounded-md border border-rose-200 px-3 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                    className="h-8 rounded-lg border border-rose-200 px-3 text-xs font-medium text-rose-600 hover:bg-rose-50"
                     onClick={() => setConfirmingDelete(true)}
                   >
                     削除
@@ -406,13 +406,13 @@ export function TaskFormDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="h-8 rounded-md border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                className="h-8 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-sky-50"
               >
                 キャンセル
               </button>
               <button
                 type="submit"
-                className="h-8 rounded-md bg-slate-900 px-3 text-xs font-medium text-white hover:bg-slate-800"
+                className="h-8 rounded-lg bg-sky-500 px-3 text-xs font-medium text-white hover:bg-sky-600"
               >
                 {mode === "create" ? "作成" : "保存"}
               </button>

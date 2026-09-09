@@ -34,7 +34,7 @@ export function TaskCard({
   return (
     <article
       ref={setNodeRef}
-      className={`rounded-lg border border-slate-200 bg-white p-3 shadow-sm cursor-grab active:cursor-grabbing hover:border-slate-300 hover:shadow-md ${
+      className={`rounded-xl border border-slate-200 bg-white p-3 shadow-sm cursor-grab active:cursor-grabbing transition-colors hover:border-sky-300 hover:shadow-md ${
         isDragging ? "opacity-40" : ""
       }`}
       onClick={() => onSelect?.(task)}

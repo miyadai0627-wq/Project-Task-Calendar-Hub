@@ -1,8 +1,13 @@
 import {
+  addDays,
+  addMonths,
   addWeeks,
   eachDayOfInterval,
+  endOfMonth,
   endOfWeek,
   format,
+  isSameMonth,
+  startOfMonth,
   startOfWeek,
 } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -22,6 +27,34 @@ export function getWeekDays(anchorDate: Date): Date[] {
 
 export function shiftWeek(anchorDate: Date, weeks: number): Date {
   return addWeeks(anchorDate, weeks);
+}
+
+export function shiftDay(anchorDate: Date, days: number): Date {
+  return addDays(anchorDate, days);
+}
+
+export function shiftMonth(anchorDate: Date, months: number): Date {
+  return addMonths(anchorDate, months);
+}
+
+export function getMonthGridDays(anchorDate: Date): Date[] {
+  const monthStart = startOfMonth(anchorDate);
+  const monthEnd = endOfMonth(anchorDate);
+  const start = startOfWeek(monthStart, { weekStartsOn: WEEK_STARTS_ON });
+  const end = endOfWeek(monthEnd, { weekStartsOn: WEEK_STARTS_ON });
+  return eachDayOfInterval({ start, end });
+}
+
+export function isInAnchorMonth(date: Date, anchorDate: Date): boolean {
+  return isSameMonth(date, anchorDate);
+}
+
+export function formatDayRange(date: Date): string {
+  return format(date, "yyyy年M月d日 (E)", { locale: ja });
+}
+
+export function formatMonthRange(date: Date): string {
+  return format(date, "yyyy年M月", { locale: ja });
 }
 
 export function toDateKey(date: Date): string {
