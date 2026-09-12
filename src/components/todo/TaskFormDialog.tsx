@@ -153,11 +153,11 @@ export function TaskFormDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-xl"
+        className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <h2 className="text-sm font-semibold text-slate-900">

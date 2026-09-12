@@ -25,6 +25,8 @@ import type { Project, Task } from "@/types";
 
 const scheduledStatuses = new Set(["scheduled", "in_progress"]);
 const INITIAL_SCROLL_HOUR = 6;
+const BOUNDARY_THRESHOLD_PX = 24;
+const RESET_OFFSET_PX = 96;
 
 function CurrentTimeIndicator() {
   const [minutesSinceMidnight, setMinutesSinceMidnight] = useState(() => {
@@ -122,6 +124,7 @@ export function VerticalCalendar({
   onSelectTask,
   onResize,
   onApplyTemplate,
+  onBoundaryScroll,
 }: {
   days: Date[];
   tasks: Task[];
@@ -133,13 +136,18 @@ export function VerticalCalendar({
     dateKey: string,
     template: (typeof ROUTINE_TEMPLATES)[number],
   ) => void;
+  onBoundaryScroll?: (direction: "prev" | "next") => void;
 }) {
   const hours = hourLabels();
   const todayKey = toDateKey(new Date());
   const [openTemplateFor, setOpenTemplateFor] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isShiftingRef = useRef(false);
+  const shiftDirectionRef = useRef<"prev" | "next" | null>(null);
   const minColumnWidth = days.length > 1 ? "4.5rem" : "0px";
   const gridTemplateColumns = `3.5rem repeat(${days.length}, minmax(${minColumnWidth}, 1fr))`;
+  const isSingleDay = days.length === 1;
+  const dayKey = days[0] ? toDateKey(days[0]) : "";
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -147,6 +155,42 @@ export function VerticalCalendar({
         (INITIAL_SCROLL_HOUR - CALENDAR_START_HOUR) * HOUR_HEIGHT_PX;
     }
   }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!isShiftingRef.current || !el) {
+      return;
+    }
+    if (shiftDirectionRef.current === "prev") {
+      el.scrollTop = el.scrollHeight - el.clientHeight - RESET_OFFSET_PX;
+    } else if (shiftDirectionRef.current === "next") {
+      el.scrollTop = RESET_OFFSET_PX;
+    }
+    isShiftingRef.current = false;
+    shiftDirectionRef.current = null;
+  }, [dayKey]);
+
+  function handleScroll() {
+    if (!isSingleDay || !onBoundaryScroll || isShiftingRef.current) {
+      return;
+    }
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
+    if (el.scrollTop <= BOUNDARY_THRESHOLD_PX) {
+      isShiftingRef.current = true;
+      shiftDirectionRef.current = "prev";
+      onBoundaryScroll("prev");
+    } else if (
+      el.scrollTop + el.clientHeight >=
+      el.scrollHeight - BOUNDARY_THRESHOLD_PX
+    ) {
+      isShiftingRef.current = true;
+      shiftDirectionRef.current = "next";
+      onBoundaryScroll("next");
+    }
+  }
 
   return (
     <section className="flex min-w-0 flex-1 flex-col bg-white">
@@ -158,7 +202,11 @@ export function VerticalCalendar({
           onClick={() => setOpenTemplateFor(null)}
         />
       ) : null}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="min-h-0 flex-1 overflow-auto"
+      >
         <div style={{ minWidth: days.length > 1 ? "32rem" : undefined }}>
           <div
             className="sticky top-0 z-20 grid border-b border-slate-200 bg-white"

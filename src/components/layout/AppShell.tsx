@@ -292,6 +292,12 @@ export function AppShell() {
                   onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
                   onResize={(id, endTime) => updateTask(id, { endTime })}
                   onApplyTemplate={handleApplyTemplate}
+                  onBoundaryScroll={
+                    calendarView === "day"
+                      ? (direction) =>
+                          setAnchorDate((current) => shiftDay(current, direction === "prev" ? -1 : 1))
+                      : undefined
+                  }
                 />
               )}
             </>
