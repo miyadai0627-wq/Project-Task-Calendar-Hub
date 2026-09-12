@@ -58,6 +58,7 @@ export function AppShell() {
   const [activeDrag, setActiveDrag] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("calendar");
   const [calendarView, setCalendarView] = useState<CalendarViewMode>("week");
+  const [isTrayOpen, setIsTrayOpen] = useState(false);
 
   const tasks = useTaskStore((state) => state.tasks);
   const hasLoaded = useTaskStore((state) => state.hasLoaded);
@@ -239,13 +240,17 @@ export function AppShell() {
           onToday={() => setAnchorDate(new Date())}
           onNext={handleNext}
           todayLabel={todayLabel}
-          onNewTask={() => setTaskModal({ mode: "create" })}
+          onNewTask={() => {
+            setTaskModal({ mode: "create" });
+            setIsTrayOpen(false);
+          }}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           calendarView={calendarView}
           onCalendarViewChange={setCalendarView}
+          onToggleTray={() => setIsTrayOpen((current) => !current)}
         />
-        <div className="flex min-h-0 flex-1">
+        <div className="relative flex min-h-0 flex-1">
           {!hasLoaded ? (
             <div className="flex flex-1 items-center justify-center text-sm text-slate-400">
               読み込み中…
@@ -257,7 +262,12 @@ export function AppShell() {
                 projects={mockProjects}
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
-                onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
+                onSelectTask={(task) => {
+                  setTaskModal({ mode: "edit", task });
+                  setIsTrayOpen(false);
+                }}
+                isOpen={isTrayOpen}
+                onClose={() => setIsTrayOpen(false)}
               />
               {viewMode === "timeline" ? (
                 <MilestoneTimeline milestones={mockMilestones} projects={visibleProjects} />

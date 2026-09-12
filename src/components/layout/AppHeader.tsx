@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListTodo, Plus } from "lucide-react";
 
 import { GoogleConnectButton } from "@/components/auth/GoogleConnectButton";
 import { CALENDAR_VIEW_MODES, type CalendarViewMode } from "@/lib/constants";
@@ -20,6 +20,7 @@ export function AppHeader({
   onViewModeChange,
   calendarView,
   onCalendarViewChange,
+  onToggleTray,
 }: {
   projects: Project[];
   selectedProjectId: string;
@@ -34,13 +35,24 @@ export function AppHeader({
   onViewModeChange: (mode: "calendar" | "timeline") => void;
   calendarView: CalendarViewMode;
   onCalendarViewChange: (mode: CalendarViewMode) => void;
+  onToggleTray?: () => void;
 }) {
   const activeProjects = projects.filter((project) => project.status === "active");
 
   return (
-    <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-2">
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        <p className="truncate text-sm font-semibold tracking-tight text-slate-900">
+    <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2 sm:px-4">
+      <div className="flex min-w-0 items-center gap-2">
+        {onToggleTray ? (
+          <button
+            type="button"
+            onClick={onToggleTray}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-sky-50 lg:hidden"
+            aria-label="TODOトレイを開く"
+          >
+            <ListTodo className="h-5 w-5" />
+          </button>
+        ) : null}
+        <p className="hidden truncate text-sm font-semibold tracking-tight text-slate-900 sm:block">
           Project Task & Calendar Hub
         </p>
         <label className="sr-only" htmlFor="project-filter">
@@ -50,7 +62,7 @@ export function AppHeader({
           id="project-filter"
           value={selectedProjectId}
           onChange={(event) => onProjectChange(event.target.value)}
-          className="h-8 shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700"
+          className="h-8 w-28 shrink rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 sm:w-auto sm:text-sm"
         >
           <option value="all">すべてのプロジェクト</option>
           {activeProjects.map((project) => (
@@ -60,7 +72,7 @@ export function AppHeader({
           ))}
         </select>
       </div>
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">
         <div className="flex shrink-0 items-center whitespace-nowrap rounded-lg border border-slate-200 p-0.5">
           <button
             type="button"
@@ -142,7 +154,7 @@ export function AppHeader({
           className="inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-lg bg-sky-500 px-3 text-sm font-medium text-white transition-colors hover:bg-sky-600"
         >
           <Plus className="h-4 w-4" />
-          新規タスク
+          <span className="hidden sm:inline">新規タスク</span>
         </button>
       </div>
     </header>

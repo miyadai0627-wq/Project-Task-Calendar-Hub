@@ -1,4 +1,4 @@
-export const CALENDAR_START_HOUR = 6;
+export const CALENDAR_START_HOUR = 0;
 export const CALENDAR_END_HOUR = 24;
 export const HOUR_HEIGHT_PX = 48;
 export const WEEK_STARTS_ON = 1 as const;
@@ -12,8 +12,8 @@ export const CALENDAR_VIEW_MODES = [
 export type CalendarViewMode = (typeof CALENDAR_VIEW_MODES)[number]["id"];
 
 export const TODO_TRAY_TABS = [
-  { id: "backlog", label: "Backlog", statuses: ["backlog"] },
-  { id: "ready", label: "Ready To Schedule", statuses: ["todo"] },
+  { id: "backlog", label: "バックログ", statuses: ["backlog"] },
+  { id: "ready", label: "スケジュール待ち", statuses: ["todo"] },
   { id: "done", label: "完了済み", statuses: ["completed"] },
 ] as const;
 
