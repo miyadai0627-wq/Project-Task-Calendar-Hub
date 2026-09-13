@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { format } from "date-fns";
 
@@ -109,6 +111,8 @@ function MonthDayCell({
   );
 }
 
+const SWIPE_DISTANCE_THRESHOLD = 60;
+
 export function MonthCalendar({
   days,
   anchorDate,
@@ -116,6 +120,8 @@ export function MonthCalendar({
   projects,
   onSelectTask,
   onSelectDay,
+  onSwipePrev,
+  onSwipeNext,
 }: {
   days: Date[];
   anchorDate: Date;
@@ -123,11 +129,45 @@ export function MonthCalendar({
   projects: Project[];
   onSelectTask?: (task: Task) => void;
   onSelectDay?: (date: Date) => void;
+  onSwipePrev?: () => void;
+  onSwipeNext?: () => void;
 }) {
   const weekdayLabels = days.slice(0, 7).map((day) => formatWeekday(day));
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  function handleTouchStart(event: React.TouchEvent) {
+    const touch = event.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }
+
+  function handleTouchEnd(event: React.TouchEvent) {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) {
+      return;
+    }
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (
+      Math.abs(deltaX) < SWIPE_DISTANCE_THRESHOLD ||
+      Math.abs(deltaX) < Math.abs(deltaY) * 1.5
+    ) {
+      return;
+    }
+    if (deltaX < 0) {
+      onSwipeNext?.();
+    } else {
+      onSwipePrev?.();
+    }
+  }
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col bg-white">
+    <section
+      className="flex min-w-0 flex-1 flex-col bg-white"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="grid grid-cols-7 border-b border-slate-200">
         {weekdayLabels.map((label, index) => (
           <div

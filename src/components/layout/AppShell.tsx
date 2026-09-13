@@ -230,7 +230,7 @@ export function AppShell() {
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveDrag(null)}
     >
-      <div className="flex h-screen flex-col bg-sky-50 text-slate-900">
+      <div className="flex h-dvh flex-col bg-sky-50 text-slate-900">
         <AppHeader
           projects={mockProjects}
           selectedProjectId={selectedProjectId}
@@ -282,6 +282,8 @@ export function AppShell() {
                     setAnchorDate(date);
                     setCalendarView("day");
                   }}
+                  onSwipePrev={handlePrev}
+                  onSwipeNext={handleNext}
                 />
               ) : (
                 <VerticalCalendar
