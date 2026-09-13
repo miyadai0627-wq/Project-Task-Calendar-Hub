@@ -295,6 +295,7 @@ export function AppShell() {
                   onSelectMilestone={(milestone) =>
                     setMilestoneModal({ mode: "edit", milestone })
                   }
+                  onMoveMilestone={(id, patch) => updateMilestone(id, patch)}
                 />
               ) : calendarView === "month" ? (
                 <MonthCalendar

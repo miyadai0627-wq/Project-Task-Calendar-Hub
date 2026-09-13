@@ -1,4 +1,4 @@
-import { addDays, differenceInCalendarDays, eachWeekOfInterval, max, min } from "date-fns";
+import { addDays, differenceInCalendarDays, eachWeekOfInterval, format, max, min } from "date-fns";
 
 import { WEEK_STARTS_ON } from "@/lib/constants";
 import type { Milestone } from "@/types";
@@ -49,4 +49,14 @@ export function timelineWidthPercent(
 
 export function timelineWeekMarkers(start: Date, end: Date): Date[] {
   return eachWeekOfInterval({ start, end }, { weekStartsOn: WEEK_STARTS_ON });
+}
+
+/** Parses a "yyyy-MM-dd" string as a local calendar date (no UTC/timezone shift). */
+export function parseDateOnly(value: string): Date {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+export function formatDateOnly(date: Date): string {
+  return format(date, "yyyy-MM-dd");
 }

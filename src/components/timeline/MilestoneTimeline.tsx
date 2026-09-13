@@ -1,16 +1,20 @@
-import { Fragment } from "react";
+"use client";
 
-import { format } from "date-fns";
+import { Fragment, useRef, useState } from "react";
+
+import { addDays, format } from "date-fns";
 import { ja } from "date-fns/locale";
 
 import {
+  formatDateOnly,
   getMilestoneDateRange,
+  parseDateOnly,
   timelineOffsetPercent,
   timelineTotalDays,
   timelineWeekMarkers,
   timelineWidthPercent,
 } from "@/lib/timeline";
-import type { Milestone, MilestoneStatus, Project } from "@/types";
+import type { Milestone, MilestoneId, MilestoneStatus, Project } from "@/types";
 
 const STATUS_LABELS: Record<MilestoneStatus, string> = {
   planned: "予定",
@@ -18,17 +22,66 @@ const STATUS_LABELS: Record<MilestoneStatus, string> = {
   completed: "完了",
 };
 
+const LONG_PRESS_MS = 350;
+const MOVE_CANCEL_PX = 8;
+const ROW_HIGHLIGHT_CLASSES = ["bg-sky-50", "ring-2", "ring-inset", "ring-sky-300"];
+const BAR_ACTIVE_CLASSES = ["shadow-lg", "ring-2", "ring-sky-400", "scale-105"];
+
+type MoveDraft = {
+  id: MilestoneId;
+  projectId: string;
+  startDate: string;
+  endDate: string;
+};
+
+type DragState = {
+  id: MilestoneId;
+  pointerId: number;
+  phase: "pending" | "active";
+  startClientX: number;
+  startClientY: number;
+  timer: ReturnType<typeof setTimeout> | null;
+  originProjectId: string;
+  originStart: Date;
+  originEnd: Date;
+  rowWidth: number;
+  totalDays: number;
+  hoveredProjectId: string;
+};
+
 export function MilestoneTimeline({
   milestones,
   projects,
   onSelectMilestone,
+  onMoveMilestone,
 }: {
   milestones: Milestone[];
   projects: Project[];
   onSelectMilestone?: (milestone: Milestone) => void;
+  onMoveMilestone?: (
+    id: MilestoneId,
+    patch: { projectId: string; startDate: string; endDate: string },
+  ) => void | Promise<void>;
 }) {
+  const [pendingMove, setPendingMove] = useState<MoveDraft | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const barRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const suppressClickRef = useRef<MilestoneId | null>(null);
+
   const activeProjects = projects.filter((project) => project.status === "active");
-  const visibleMilestones = milestones.filter((milestone) =>
+
+  const visualMilestones = milestones.map((milestone) =>
+    pendingMove && pendingMove.id === milestone.id
+      ? {
+          ...milestone,
+          projectId: pendingMove.projectId,
+          startDate: pendingMove.startDate,
+          endDate: pendingMove.endDate,
+        }
+      : milestone,
+  );
+  const visibleMilestones = visualMilestones.filter((milestone) =>
     activeProjects.some((project) => project.id === milestone.projectId),
   );
 
@@ -37,6 +90,182 @@ export function MilestoneTimeline({
   const weekMarkers = timelineWeekMarkers(start, end);
   const todayOffset = timelineOffsetPercent(new Date(), start, totalDays);
   const showToday = todayOffset >= 0 && todayOffset <= 100;
+
+  function clearRowHighlight(projectId: string | null) {
+    if (!projectId) return;
+    rowRefs.current.get(projectId)?.classList.remove(...ROW_HIGHLIGHT_CLASSES);
+  }
+
+  function resetBarVisual(id: string) {
+    const el = barRefs.current.get(id);
+    if (!el) return;
+    el.style.transform = "";
+    el.style.zIndex = "";
+    el.classList.remove(...BAR_ACTIVE_CLASSES, "opacity-80", "cursor-grabbing");
+  }
+
+  function findHoveredProjectId(clientY: number): string {
+    let closestId = "";
+    let closestDistance = Number.POSITIVE_INFINITY;
+    for (const [projectId, el] of rowRefs.current.entries()) {
+      const rect = el.getBoundingClientRect();
+      if (clientY >= rect.top && clientY <= rect.bottom) {
+        return projectId;
+      }
+      const distance =
+        clientY < rect.top ? rect.top - clientY : clientY - rect.bottom;
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestId = projectId;
+      }
+    }
+    return closestId;
+  }
+
+  function handlePointerDown(
+    event: React.PointerEvent<HTMLButtonElement>,
+    milestone: Milestone,
+  ) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (dragRef.current) return;
+
+    const rowEl = rowRefs.current.get(milestone.projectId);
+    const barEl = barRefs.current.get(milestone.id);
+    if (!rowEl || !barEl) return;
+
+    barEl.classList.add("opacity-80");
+
+    const state: DragState = {
+      id: milestone.id,
+      pointerId: event.pointerId,
+      phase: "pending",
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      timer: null,
+      originProjectId: milestone.projectId,
+      originStart: parseDateOnly(milestone.startDate),
+      originEnd: parseDateOnly(milestone.endDate),
+      rowWidth: rowEl.getBoundingClientRect().width,
+      totalDays,
+      hoveredProjectId: milestone.projectId,
+    };
+
+    state.timer = setTimeout(() => {
+      if (dragRef.current !== state) return;
+      state.phase = "active";
+      try {
+        barEl.setPointerCapture(state.pointerId);
+      } catch {
+        // pointer may already be released; ignore
+      }
+      barEl.classList.remove("opacity-80");
+      barEl.classList.add(...BAR_ACTIVE_CLASSES, "cursor-grabbing");
+      barEl.style.zIndex = "50";
+      rowRefs.current.get(state.hoveredProjectId)?.classList.add(...ROW_HIGHLIGHT_CLASSES);
+    }, LONG_PRESS_MS);
+
+    dragRef.current = state;
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLButtonElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.id !== event.currentTarget.dataset.milestoneId) return;
+
+    const deltaX = event.clientX - drag.startClientX;
+    const deltaY = event.clientY - drag.startClientY;
+
+    if (drag.phase === "pending") {
+      if (Math.hypot(deltaX, deltaY) > MOVE_CANCEL_PX) {
+        if (drag.timer) clearTimeout(drag.timer);
+        barRefs.current.get(drag.id)?.classList.remove("opacity-80");
+        dragRef.current = null;
+      }
+      return;
+    }
+
+    event.preventDefault();
+    const barEl = barRefs.current.get(drag.id);
+    if (barEl) {
+      barEl.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    }
+
+    const hovered = findHoveredProjectId(event.clientY);
+    if (hovered && hovered !== drag.hoveredProjectId) {
+      clearRowHighlight(drag.hoveredProjectId);
+      drag.hoveredProjectId = hovered;
+      rowRefs.current.get(hovered)?.classList.add(...ROW_HIGHLIGHT_CLASSES);
+    }
+  }
+
+  function handlePointerUp(event: React.PointerEvent<HTMLButtonElement>) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    dragRef.current = null;
+    if (drag.timer) clearTimeout(drag.timer);
+
+    if (drag.phase !== "active") {
+      barRefs.current.get(drag.id)?.classList.remove("opacity-80");
+      return;
+    }
+
+    const deltaX = event.clientX - drag.startClientX;
+    resetBarVisual(drag.id);
+    clearRowHighlight(drag.hoveredProjectId);
+    suppressClickRef.current = drag.id;
+
+    try {
+      event.currentTarget.releasePointerCapture(drag.pointerId);
+    } catch {
+      // ignore
+    }
+
+    const pxPerDay = drag.rowWidth / drag.totalDays;
+    const deltaDays = pxPerDay > 0 ? Math.round(deltaX / pxPerDay) : 0;
+    const newStart = addDays(drag.originStart, deltaDays);
+    const newEnd = addDays(drag.originEnd, deltaDays);
+    const newProjectId = drag.hoveredProjectId || drag.originProjectId;
+
+    const patch: MoveDraft = {
+      id: drag.id,
+      projectId: newProjectId,
+      startDate: formatDateOnly(newStart),
+      endDate: formatDateOnly(newEnd),
+    };
+
+    const original = milestones.find((milestone) => milestone.id === drag.id);
+    const unchanged =
+      original &&
+      patch.projectId === original.projectId &&
+      patch.startDate === original.startDate &&
+      patch.endDate === original.endDate;
+
+    if (unchanged) return;
+
+    setPendingMove(patch);
+    Promise.resolve(
+      onMoveMilestone?.(patch.id, {
+        projectId: patch.projectId,
+        startDate: patch.startDate,
+        endDate: patch.endDate,
+      }),
+    )
+      .then(() => setPendingMove(null))
+      .catch(() => setPendingMove(null));
+  }
+
+  function handlePointerCancel(event: React.PointerEvent<HTMLButtonElement>) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    dragRef.current = null;
+    if (drag.timer) clearTimeout(drag.timer);
+    resetBarVisual(drag.id);
+    clearRowHighlight(drag.hoveredProjectId);
+    try {
+      event.currentTarget.releasePointerCapture(drag.pointerId);
+    } catch {
+      // ignore
+    }
+  }
 
   if (activeProjects.length === 0) {
     return (
@@ -83,7 +312,13 @@ export function MilestoneTimeline({
                   />
                   <span className="truncate">{project.name}</span>
                 </div>
-                <div className="relative h-14 border-b border-slate-100">
+                <div
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(project.id, el);
+                    else rowRefs.current.delete(project.id);
+                  }}
+                  className="relative h-14 border-b border-slate-100 transition-colors"
+                >
                   {showToday ? (
                     <div
                       className="absolute bottom-0 top-0 w-px bg-rose-500/60"
@@ -96,8 +331,8 @@ export function MilestoneTimeline({
                     </p>
                   ) : (
                     projectMilestones.map((milestone) => {
-                      const milestoneStart = new Date(milestone.startDate);
-                      const milestoneEnd = new Date(milestone.endDate);
+                      const milestoneStart = parseDateOnly(milestone.startDate);
+                      const milestoneEnd = parseDateOnly(milestone.endDate);
                       const left = timelineOffsetPercent(
                         milestoneStart,
                         start,
@@ -113,16 +348,33 @@ export function MilestoneTimeline({
                         <button
                           key={milestone.id}
                           type="button"
-                          onClick={() => onSelectMilestone?.(milestone)}
-                          className={`absolute top-1/2 flex h-6 -translate-y-1/2 items-center overflow-hidden rounded-full px-2 text-[11px] font-medium shadow-sm transition-shadow hover:shadow-md ${
+                          data-milestone-id={milestone.id}
+                          onClick={() => {
+                            if (suppressClickRef.current === milestone.id) {
+                              suppressClickRef.current = null;
+                              return;
+                            }
+                            onSelectMilestone?.(milestone);
+                          }}
+                          onPointerDown={(event) => handlePointerDown(event, milestone)}
+                          onPointerMove={handlePointerMove}
+                          onPointerUp={handlePointerUp}
+                          onPointerCancel={handlePointerCancel}
+                          onContextMenu={(event) => event.preventDefault()}
+                          ref={(el) => {
+                            if (el) barRefs.current.set(milestone.id, el);
+                            else barRefs.current.delete(milestone.id);
+                          }}
+                          className={`absolute top-1/2 flex h-6 -translate-y-1/2 touch-none select-none items-center overflow-hidden rounded-full px-2 text-[11px] font-medium shadow-sm transition-shadow hover:shadow-md ${
                             isPlanned ? "border-2 border-dashed" : "border border-white/50"
-                          } ${milestone.status === "completed" ? "opacity-70" : ""}`}
+                          } ${milestone.status === "completed" ? "opacity-70" : ""} cursor-grab`}
                           style={{
                             left: `${left}%`,
                             width: `${Math.max(width, 4)}%`,
                             backgroundColor: isPlanned ? "transparent" : project.color,
                             borderColor: project.color,
                             color: isPlanned ? project.color : "white",
+                            touchAction: "none",
                           }}
                           title={`${milestone.title}（${STATUS_LABELS[milestone.status]}）: ${milestone.startDate} 〜 ${milestone.endDate}`}
                         >
