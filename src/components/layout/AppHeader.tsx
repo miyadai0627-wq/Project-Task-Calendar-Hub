@@ -142,7 +142,7 @@ export function AppHeader({
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <p className="hidden whitespace-nowrap text-sm text-slate-600 xl:block">
+            <p className="whitespace-nowrap text-sm font-medium text-slate-700">
               {dateRangeLabel}
             </p>
           </>
