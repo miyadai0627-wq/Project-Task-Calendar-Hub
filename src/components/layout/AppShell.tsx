@@ -15,6 +15,7 @@ import {
 import { MonthCalendar } from "@/components/calendar/MonthCalendar";
 import { VerticalCalendar } from "@/components/calendar/VerticalCalendar";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { MilestoneFormDialog } from "@/components/timeline/MilestoneFormDialog";
 import { MilestoneTimeline } from "@/components/timeline/MilestoneTimeline";
 import { TaskFormDialog } from "@/components/todo/TaskFormDialog";
 import { TodoTray } from "@/components/todo/TodoTray";
@@ -38,11 +39,13 @@ import type {
   ROUTINE_TEMPLATES,
   TodoTrayTabId,
 } from "@/lib/constants";
-import { mockMilestones, mockProjects } from "@/lib/mock-data";
+import { mockProjects } from "@/lib/mock-data";
+import { useMilestoneStore } from "@/store/useMilestoneStore";
 import { useTaskStore } from "@/store/useTaskStore";
-import type { Task } from "@/types";
+import type { Milestone, Task } from "@/types";
 
 type TaskModalState = { mode: "create" | "edit"; task?: Task };
+type MilestoneModalState = { mode: "create" | "edit"; milestone?: Milestone };
 type DragData = { source: "tray" | "event"; task: Task };
 type ViewMode = "calendar" | "timeline";
 
@@ -55,6 +58,7 @@ export function AppShell() {
   const [selectedProjectId, setSelectedProjectId] = useState("all");
   const [activeTab, setActiveTab] = useState<TodoTrayTabId>("ready");
   const [taskModal, setTaskModal] = useState<TaskModalState | null>(null);
+  const [milestoneModal, setMilestoneModal] = useState<MilestoneModalState | null>(null);
   const [activeDrag, setActiveDrag] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("calendar");
   const [calendarView, setCalendarView] = useState<CalendarViewMode>("week");
@@ -68,9 +72,16 @@ export function AppShell() {
   const deleteTask = useTaskStore((state) => state.deleteTask);
   const toggleCompletion = useTaskStore((state) => state.toggleCompletion);
 
+  const milestones = useMilestoneStore((state) => state.milestones);
+  const fetchMilestones = useMilestoneStore((state) => state.fetchMilestones);
+  const addMilestone = useMilestoneStore((state) => state.addMilestone);
+  const updateMilestone = useMilestoneStore((state) => state.updateMilestone);
+  const deleteMilestone = useMilestoneStore((state) => state.deleteMilestone);
+
   useEffect(() => {
     fetchTasks();
-  }, [fetchTasks]);
+    fetchMilestones();
+  }, [fetchTasks, fetchMilestones]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -115,6 +126,10 @@ export function AppShell() {
 
   function closeModal() {
     setTaskModal(null);
+  }
+
+  function closeMilestoneModal() {
+    setMilestoneModal(null);
   }
 
   function handlePrev() {
@@ -241,7 +256,11 @@ export function AppShell() {
           onNext={handleNext}
           todayLabel={todayLabel}
           onNewTask={() => {
-            setTaskModal({ mode: "create" });
+            if (viewMode === "timeline") {
+              setMilestoneModal({ mode: "create" });
+            } else {
+              setTaskModal({ mode: "create" });
+            }
             setIsTrayOpen(false);
           }}
           viewMode={viewMode}
@@ -270,7 +289,13 @@ export function AppShell() {
                 onClose={() => setIsTrayOpen(false)}
               />
               {viewMode === "timeline" ? (
-                <MilestoneTimeline milestones={mockMilestones} projects={visibleProjects} />
+                <MilestoneTimeline
+                  milestones={milestones}
+                  projects={visibleProjects}
+                  onSelectMilestone={(milestone) =>
+                    setMilestoneModal({ mode: "edit", milestone })
+                  }
+                />
               ) : calendarView === "month" ? (
                 <MonthCalendar
                   days={visibleDays}
@@ -341,6 +366,30 @@ export function AppShell() {
               if (taskModal.task) {
                 updateTask(taskModal.task.id, { googleEventId: eventId });
               }
+            }}
+          />
+        ) : null}
+
+        {milestoneModal ? (
+          <MilestoneFormDialog
+            mode={milestoneModal.mode}
+            milestone={milestoneModal.milestone}
+            projects={mockProjects}
+            defaultProjectId={
+              selectedProjectId !== "all" ? selectedProjectId : undefined
+            }
+            onClose={closeMilestoneModal}
+            onSubmit={(draft) => {
+              if (milestoneModal.mode === "create") {
+                addMilestone(draft);
+              } else if (milestoneModal.milestone) {
+                updateMilestone(milestoneModal.milestone.id, draft);
+              }
+              closeMilestoneModal();
+            }}
+            onDelete={(id) => {
+              deleteMilestone(id);
+              closeMilestoneModal();
             }}
           />
         ) : null}

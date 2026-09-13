@@ -21,9 +21,11 @@ const STATUS_LABELS: Record<MilestoneStatus, string> = {
 export function MilestoneTimeline({
   milestones,
   projects,
+  onSelectMilestone,
 }: {
   milestones: Milestone[];
   projects: Project[];
+  onSelectMilestone?: (milestone: Milestone) => void;
 }) {
   const activeProjects = projects.filter((project) => project.status === "active");
   const visibleMilestones = milestones.filter((milestone) =>
@@ -108,9 +110,11 @@ export function MilestoneTimeline({
                       );
                       const isPlanned = milestone.status === "planned";
                       return (
-                        <div
+                        <button
                           key={milestone.id}
-                          className={`absolute top-1/2 flex h-6 -translate-y-1/2 items-center overflow-hidden rounded-full px-2 text-[11px] font-medium shadow-sm ${
+                          type="button"
+                          onClick={() => onSelectMilestone?.(milestone)}
+                          className={`absolute top-1/2 flex h-6 -translate-y-1/2 items-center overflow-hidden rounded-full px-2 text-[11px] font-medium shadow-sm transition-shadow hover:shadow-md ${
                             isPlanned ? "border-2 border-dashed" : "border border-white/50"
                           } ${milestone.status === "completed" ? "opacity-70" : ""}`}
                           style={{
@@ -123,7 +127,7 @@ export function MilestoneTimeline({
                           title={`${milestone.title}（${STATUS_LABELS[milestone.status]}）: ${milestone.startDate} 〜 ${milestone.endDate}`}
                         >
                           <span className="truncate">{milestone.title}</span>
-                        </div>
+                        </button>
                       );
                     })
                   )}

@@ -154,7 +154,9 @@ export function AppHeader({
           className="inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-lg bg-sky-500 px-3 text-sm font-medium text-white transition-colors hover:bg-sky-600"
         >
           <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">新規タスク</span>
+          <span className="hidden sm:inline">
+            {viewMode === "timeline" ? "新規マイルストーン" : "新規タスク"}
+          </span>
         </button>
       </div>
     </header>
