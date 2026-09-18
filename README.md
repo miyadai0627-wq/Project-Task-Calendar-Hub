@@ -26,7 +26,7 @@
 |---|---|
 | フレームワーク | Next.js 16 (App Router, Turbopack) / React 19 / TypeScript |
 | スタイリング | Tailwind CSS v4 |
-| 状態管理 | Zustand（`useTaskStore` / `useMilestoneStore`） |
+| 状態管理 | Zustand（`useProjectStore` / `useTaskStore` / `useMilestoneStore`） |
 | ドラッグ&ドロップ | @dnd-kit/core（カレンダー）、独自Pointer Events実装（タイムライン） |
 | 認証 | NextAuth v5 (beta) + Google OAuth、JWTセッション |
 | データベース | Neon Postgres（サーバーレスPostgres） |
@@ -37,9 +37,21 @@
 
 ## データベーススキーマ
 
-現時点でデータベースに永続化されているテーブルは **`Task`** と **`Milestone`** の2つ。どちらも `userId`（Googleアカウントの `providerAccountId`）でユーザーごとにデータを分離するマルチテナント設計で、`userId` にインデックスを張っている。
+データベースに永続化されているテーブルは **`Project`** **`Task`** **`Milestone`** の3つ。いずれも `userId`（Googleアカウントの `providerAccountId`）でユーザーごとにデータを分離するマルチテナント設計で、`userId` にインデックスを張っている。第3正規形を意識し、プロジェクト名・カラーなど「projectIdにのみ依存する属性」は`Project`テーブルに切り出し、Task/Milestoneからは外部キー（`projectId`）で参照する構成にしている（以前はプロジェクトがハードコードされたmockデータで、外部キー制約もなかった）。
 
-> **Project（プロジェクト）はDBテーブルではない。** `src/lib/mock-data.ts` に定義された固定データ（3件）をクライアント側で参照しているだけで、プロジェクトの作成・編集機能は未実装。Task/MilestoneはプロジェクトIDを文字列として保持するのみで、DB上の外部キー制約はない。
+### `Project` テーブル
+
+| カラム | 型 | 必須 | 説明 |
+|---|---|---|---|
+| id | String (cuid) | ✔ | 主キー |
+| userId | String | ✔ | 所有者（Googleアカウント）。インデックス対象 |
+| name | String | ✔ | プロジェクト名 |
+| color | String | ✔ | 表示カラー（16進） |
+| status | String | ✔ | `active / archived` |
+| order | Int | ✔ | 表示順 |
+| createdAt / updatedAt | DateTime | ✔ | 作成・更新日時（自動） |
+
+現状はアプリからの作成・編集・削除UIはなく、読み取り専用（`GET /api/projects`）。既存の3プロジェクトはマイグレーション時にデータ移行済み。
 
 ### `Task` テーブル
 
@@ -47,7 +59,7 @@
 |---|---|---|---|
 | id | String (cuid) | ✔ | 主キー |
 | userId | String | ✔ | 所有者（Googleアカウント）。インデックス対象 |
-| projectId | String | ✔ | 所属プロジェクトID（mock-dataのIDを参照、外部キーなし） |
+| projectId | String | ✔ | `Project.id` への外部キー。インデックス対象 |
 | title | String | ✔ | タスク名 |
 | description | String? | - | 詳細メモ |
 | status | String | ✔ | `backlog / todo / scheduled / in_progress / completed / archived` |
@@ -67,7 +79,7 @@
 |---|---|---|---|
 | id | String (cuid) | ✔ | 主キー |
 | userId | String | ✔ | 所有者（Googleアカウント）。インデックス対象 |
-| projectId | String | ✔ | 所属プロジェクトID |
+| projectId | String | ✔ | `Project.id` への外部キー。インデックス対象 |
 | title | String | ✔ | マイルストーン名 |
 | startDate / endDate | String | ✔ | タイムライン上の期間（YYYY-MM-DD） |
 | status | String | ✔ | `planned / in_progress / completed` |
@@ -77,12 +89,14 @@
 
 1. `20260911205018_init` — `Task` テーブル作成
 2. `20260913203405_add_milestone` — `Milestone` テーブル追加
+3. `20260918213211_add_project` — `Project` テーブルを追加し、Task/Milestoneの`projectId`を外部キー化（既存行のプロジェクトデータをmockから実テーブルへ移行するデータマイグレーションを含む）
 
 ## ディレクトリ構成（`src/`）
 
 ```
 app/                 App Router のページと /api ルート
   api/auth/           NextAuthハンドラ
+  api/projects/        プロジェクト一覧取得API（読み取り専用）
   api/tasks/           タスクCRUD API
   api/milestones/      マイルストーンCRUD API
   api/calendar/sync/   Googleカレンダー同期API
@@ -92,8 +106,8 @@ components/
   todo/                TODOトレイ・タスク編集モーダル
   timeline/            マイルストーンタイムライン・編集モーダル
   auth/                Googleログインボタン
-store/                 Zustandストア（タスク/マイルストーン）
-lib/                   カレンダー計算・タイムライン計算・定数・mockデータ
+store/                 Zustandストア（プロジェクト/タスク/マイルストーン）
+lib/                   カレンダー計算・タイムライン計算・定数
 types/                 Task / Milestone / Project の型定義
 generated/prisma/      Prisma Clientの生成コード（gitignore対象）
 ```
@@ -132,5 +146,6 @@ PRD.md（プロダクト要求定義）を起点に、Claude Codeとの対話で
 7. **モバイルUX改善**: 実機（スマホ）での検証を重ね、カレンダー表示時間帯、レスポンシブレイアウト、日本語ラベル、モーダルがブラウザのUIに隠れる問題、日をまたぐ連続スクロール、月表示のスワイプ移動・現在位置表示などを修正
 8. **マイルストーンのDB連携化**: タイムラインが実データと連動しておらず編集もできなかった問題を解消し、Taskと同じ設計パターン（Prismaモデル→API→Zustandストア→フォームモーダル）でマイルストーンのCRUD機能をDB連携で実装
 9. **タイムラインのドラッグ操作**: マイルストーンバーを長押し→ドラッグで、日付の移動とプロジェクト行の付け替えを直感的に行えるように拡張
+10. **スキーマの正規化**: プロジェクトがハードコードされたmockデータのままだった点を解消し、`Project`テーブルを新設。Task/Milestoneの`projectId`を外部キー化し、第3正規形（プロジェクト名・カラーなどprojectId従属の属性をProjectテーブルに集約）まで整理
 
 開発を通じて、Next.js 16／Prisma 7／NextAuth v5（いずれも比較的新しいメジャーバージョン）特有の破壊的変更への対応や、実機でのモバイルUX検証・改善を重視した。

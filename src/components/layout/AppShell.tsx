@@ -39,8 +39,8 @@ import type {
   ROUTINE_TEMPLATES,
   TodoTrayTabId,
 } from "@/lib/constants";
-import { mockProjects } from "@/lib/mock-data";
 import { useMilestoneStore } from "@/store/useMilestoneStore";
+import { useProjectStore } from "@/store/useProjectStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import type { Milestone, Task } from "@/types";
 
@@ -78,10 +78,14 @@ export function AppShell() {
   const updateMilestone = useMilestoneStore((state) => state.updateMilestone);
   const deleteMilestone = useMilestoneStore((state) => state.deleteMilestone);
 
+  const projects = useProjectStore((state) => state.projects);
+  const fetchProjects = useProjectStore((state) => state.fetchProjects);
+
   useEffect(() => {
     fetchTasks();
     fetchMilestones();
-  }, [fetchTasks, fetchMilestones]);
+    fetchProjects();
+  }, [fetchTasks, fetchMilestones, fetchProjects]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -119,10 +123,10 @@ export function AppShell() {
 
   const visibleProjects = useMemo(() => {
     if (selectedProjectId === "all") {
-      return mockProjects;
+      return projects;
     }
-    return mockProjects.filter((project) => project.id === selectedProjectId);
-  }, [selectedProjectId]);
+    return projects.filter((project) => project.id === selectedProjectId);
+  }, [projects, selectedProjectId]);
 
   function closeModal() {
     setTaskModal(null);
@@ -247,7 +251,7 @@ export function AppShell() {
     >
       <div className="flex h-dvh flex-col bg-zinc-50 text-zinc-900">
         <AppHeader
-          projects={mockProjects}
+          projects={projects}
           selectedProjectId={selectedProjectId}
           onProjectChange={setSelectedProjectId}
           dateRangeLabel={dateRangeLabel}
@@ -278,7 +282,7 @@ export function AppShell() {
             <>
               <TodoTray
                 tasks={visibleTasks}
-                projects={mockProjects}
+                projects={projects}
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
                 onSelectTask={(task) => {
@@ -302,7 +306,7 @@ export function AppShell() {
                   days={visibleDays}
                   anchorDate={anchorDate}
                   tasks={visibleTasks}
-                  projects={mockProjects}
+                  projects={projects}
                   onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
                   onSelectDay={(date) => {
                     setAnchorDate(date);
@@ -315,7 +319,7 @@ export function AppShell() {
                 <VerticalCalendar
                   days={visibleDays}
                   tasks={visibleTasks}
-                  projects={mockProjects}
+                  projects={projects}
                   onToggleComplete={toggleCompletion}
                   onSelectTask={(task) => setTaskModal({ mode: "edit", task })}
                   onResize={(id, endTime) => updateTask(id, { endTime })}
@@ -336,7 +340,7 @@ export function AppShell() {
           <TaskFormDialog
             mode={taskModal.mode}
             task={taskModal.task}
-            projects={mockProjects}
+            projects={projects}
             defaultProjectId={
               selectedProjectId !== "all" ? selectedProjectId : undefined
             }
@@ -375,7 +379,7 @@ export function AppShell() {
           <MilestoneFormDialog
             mode={milestoneModal.mode}
             milestone={milestoneModal.milestone}
-            projects={mockProjects}
+            projects={projects}
             defaultProjectId={
               selectedProjectId !== "all" ? selectedProjectId : undefined
             }
