@@ -34,7 +34,7 @@ export function TaskCard({
   return (
     <article
       ref={setNodeRef}
-      className={`rounded-xl border border-slate-200 bg-white p-3 shadow-sm cursor-grab active:cursor-grabbing transition-colors hover:border-sky-300 hover:shadow-md ${
+      className={`rounded-lg border border-zinc-200 bg-white p-3 shadow-sm cursor-grab active:cursor-grabbing transition-colors hover:border-indigo-300 hover:shadow-md ${
         isDragging ? "opacity-40" : ""
       }`}
       onClick={() => onSelect?.(task)}
@@ -55,15 +55,15 @@ export function TaskCard({
               style={{ backgroundColor: project?.color ?? "#94A3B8" }}
               aria-hidden
             />
-            <p className="truncate text-[11px] font-medium text-slate-500">
+            <p className="truncate text-[11px] font-medium text-zinc-500">
               {project?.name ?? "未分類"}
             </p>
           </div>
-          <h3 className="mt-1 text-sm font-semibold text-slate-900">{task.title}</h3>
+          <h3 className="mt-1 text-sm font-semibold text-zinc-900">{task.title}</h3>
         </div>
         <PriorityBadge priority={task.priority} />
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
         {estimate ? (
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3 w-3" aria-hidden />

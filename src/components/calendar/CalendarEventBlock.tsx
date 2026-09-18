@@ -114,7 +114,7 @@ export function CalendarEventBlock({
         />
         <div className="min-w-0">
           <p className="truncate text-[11px] font-semibold leading-4">{task.title}</p>
-          <p className="text-[10px] opacity-90">
+          <p className="text-[10px] opacity-90 tabular-nums">
             {task.startTime}–{displayEndTime}
           </p>
         </div>

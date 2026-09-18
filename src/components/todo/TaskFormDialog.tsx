@@ -25,8 +25,8 @@ const PRIORITY_LABELS: Record<TaskPriority, string> = {
 const SCHEDULE_STATUSES = new Set<TaskStatus>(["scheduled", "in_progress"]);
 
 const inputClass =
-  "h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-300";
-const labelClass = "text-xs font-medium text-slate-600";
+  "h-9 w-full rounded-lg border border-zinc-200 bg-white px-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-indigo-300";
+const labelClass = "text-xs font-medium text-zinc-600";
 
 function toNumberOrUndefined(value: string): number | undefined {
   if (value.trim() === "") {
@@ -153,14 +153,14 @@ export function TaskFormDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       onClick={onClose}
     >
       <div
-        className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl"
+        className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 className="text-sm font-semibold text-slate-900">
+        <h2 className="font-display text-sm font-semibold text-zinc-900">
           {mode === "create" ? "新規タスク" : "タスクを編集"}
         </h2>
 
@@ -288,7 +288,7 @@ export function TaskFormDialog({
           </div>
 
           {needsSchedule ? (
-            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
               <div className="space-y-1">
                 <label className={labelClass} htmlFor="task-scheduled-date">
                   配置日
@@ -331,17 +331,17 @@ export function TaskFormDialog({
           ) : null}
 
           {canSyncToGoogle ? (
-            <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-2.5">
               {session ? (
                 <>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-zinc-500">
                     {task?.googleEventId ? "Googleカレンダーと同期済み" : "Googleカレンダー未同期"}
                   </span>
                   <button
                     type="button"
                     onClick={handleSyncToGoogle}
                     disabled={syncState === "syncing"}
-                    className="h-7 shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-sky-50 disabled:opacity-50"
+                    className="h-7 shrink-0 rounded-lg border border-zinc-200 bg-white px-2.5 text-xs font-medium text-zinc-700 hover:bg-indigo-50 disabled:opacity-50"
                   >
                     {syncState === "syncing"
                       ? "同期中…"
@@ -352,11 +352,11 @@ export function TaskFormDialog({
                 </>
               ) : (
                 <>
-                  <span className="text-xs text-slate-500">Googleカレンダーと未連携です</span>
+                  <span className="text-xs text-zinc-500">Googleカレンダーと未連携です</span>
                   <button
                     type="button"
                     onClick={() => signIn("google")}
-                    className="h-7 shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-sky-50"
+                    className="h-7 shrink-0 rounded-lg border border-zinc-200 bg-white px-2.5 text-xs font-medium text-zinc-700 hover:bg-indigo-50"
                   >
                     連携する
                   </button>
@@ -375,7 +375,7 @@ export function TaskFormDialog({
               {mode === "edit" && task && onDelete ? (
                 confirmingDelete ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-600">削除しますか？</span>
+                    <span className="text-xs text-zinc-600">削除しますか？</span>
                     <button
                       type="button"
                       className="h-8 rounded-lg bg-rose-500 px-2 text-xs font-medium text-white hover:bg-rose-600"
@@ -385,7 +385,7 @@ export function TaskFormDialog({
                     </button>
                     <button
                       type="button"
-                      className="h-8 rounded-lg border border-slate-200 px-2 text-xs text-slate-600"
+                      className="h-8 rounded-lg border border-zinc-200 px-2 text-xs text-zinc-600"
                       onClick={() => setConfirmingDelete(false)}
                     >
                       キャンセル
@@ -406,13 +406,13 @@ export function TaskFormDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="h-8 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-sky-50"
+                className="h-8 rounded-lg border border-zinc-200 px-3 text-xs font-medium text-zinc-600 hover:bg-indigo-50"
               >
                 キャンセル
               </button>
               <button
                 type="submit"
-                className="h-8 rounded-lg bg-sky-500 px-3 text-xs font-medium text-white hover:bg-sky-600"
+                className="h-8 rounded-lg bg-indigo-600 px-3 text-xs font-medium text-white hover:bg-indigo-700"
               >
                 {mode === "create" ? "作成" : "保存"}
               </button>

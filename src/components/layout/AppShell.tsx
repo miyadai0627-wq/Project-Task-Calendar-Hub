@@ -245,7 +245,7 @@ export function AppShell() {
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveDrag(null)}
     >
-      <div className="flex h-dvh flex-col bg-sky-50 text-slate-900">
+      <div className="flex h-dvh flex-col bg-zinc-50 text-zinc-900">
         <AppHeader
           projects={mockProjects}
           selectedProjectId={selectedProjectId}
@@ -271,7 +271,7 @@ export function AppShell() {
         />
         <div className="relative flex min-h-0 flex-1">
           {!hasLoaded ? (
-            <div className="flex flex-1 items-center justify-center text-sm text-slate-400">
+            <div className="flex flex-1 items-center justify-center text-sm text-zinc-400">
               読み込み中…
             </div>
           ) : (
@@ -398,8 +398,8 @@ export function AppShell() {
 
       <DragOverlay>
         {activeDrag ? (
-          <div className="w-64 rounded-xl border border-sky-200 bg-white p-2.5 shadow-lg">
-            <p className="truncate text-sm font-semibold text-slate-900">
+          <div className="w-64 rounded-lg border border-indigo-200 bg-white p-2.5 shadow-lg">
+            <p className="truncate text-sm font-semibold text-zinc-900">
               {activeDrag.title}
             </p>
           </div>

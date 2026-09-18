@@ -24,8 +24,8 @@ const STATUS_LABELS: Record<MilestoneStatus, string> = {
 
 const LONG_PRESS_MS = 350;
 const MOVE_CANCEL_PX = 8;
-const ROW_HIGHLIGHT_CLASSES = ["bg-sky-50", "ring-2", "ring-inset", "ring-sky-300"];
-const BAR_ACTIVE_CLASSES = ["shadow-lg", "ring-2", "ring-sky-400", "scale-105"];
+const ROW_HIGHLIGHT_CLASSES = ["bg-indigo-50", "ring-2", "ring-inset", "ring-indigo-300"];
+const BAR_ACTIVE_CLASSES = ["shadow-lg", "ring-2", "ring-indigo-400", "scale-105"];
 
 type MoveDraft = {
   id: MilestoneId;
@@ -269,7 +269,7 @@ export function MilestoneTimeline({
 
   if (activeProjects.length === 0) {
     return (
-      <section className="flex min-w-0 flex-1 items-center justify-center bg-white text-sm text-slate-400">
+      <section className="flex min-w-0 flex-1 items-center justify-center bg-white text-sm text-zinc-400">
         表示できるプロジェクトがありません
       </section>
     );
@@ -280,11 +280,11 @@ export function MilestoneTimeline({
       <div className="min-w-[720px] p-4">
         <div className="grid grid-cols-[10rem_1fr]">
           <div />
-          <div className="relative h-8 border-b border-slate-200">
+          <div className="relative h-8 border-b border-zinc-200">
             {weekMarkers.map((date) => (
               <div
                 key={date.toISOString()}
-                className="absolute top-0 border-l border-slate-200 pl-1 text-[10px] text-slate-400"
+                className="absolute top-0 border-l border-zinc-200 pl-1 text-[10px] text-zinc-400"
                 style={{ left: `${timelineOffsetPercent(date, start, totalDays)}%` }}
               >
                 {format(date, "M/d", { locale: ja })}
@@ -304,7 +304,7 @@ export function MilestoneTimeline({
             );
             return (
               <Fragment key={project.id}>
-                <div className="flex items-center gap-1.5 border-b border-slate-100 pr-2 text-xs font-medium text-slate-600">
+                <div className="flex items-center gap-1.5 border-b border-zinc-100 pr-2 text-xs font-medium text-zinc-600">
                   <span
                     className="h-2 w-2 shrink-0 rounded-full"
                     style={{ backgroundColor: project.color }}
@@ -317,7 +317,7 @@ export function MilestoneTimeline({
                     if (el) rowRefs.current.set(project.id, el);
                     else rowRefs.current.delete(project.id);
                   }}
-                  className="relative h-14 border-b border-slate-100 transition-colors"
+                  className="relative h-14 border-b border-zinc-100 transition-colors"
                 >
                   {showToday ? (
                     <div
@@ -326,7 +326,7 @@ export function MilestoneTimeline({
                     />
                   ) : null}
                   {projectMilestones.length === 0 ? (
-                    <p className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-300">
+                    <p className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-zinc-300">
                       マイルストーンなし
                     </p>
                   ) : (
@@ -365,7 +365,7 @@ export function MilestoneTimeline({
                             if (el) barRefs.current.set(milestone.id, el);
                             else barRefs.current.delete(milestone.id);
                           }}
-                          className={`absolute top-1/2 flex h-6 -translate-y-1/2 touch-none select-none items-center overflow-hidden rounded-full px-2 text-[11px] font-medium shadow-sm transition-shadow hover:shadow-md ${
+                          className={`absolute top-1/2 flex h-6 -translate-y-1/2 touch-none select-none items-center overflow-hidden rounded-md px-2 text-[11px] font-medium shadow-sm transition-shadow hover:shadow-md ${
                             isPlanned ? "border-2 border-dashed" : "border border-white/50"
                           } ${milestone.status === "completed" ? "opacity-70" : ""} cursor-grab`}
                           style={{

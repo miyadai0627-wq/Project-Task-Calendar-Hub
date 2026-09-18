@@ -40,7 +40,7 @@ function MonthEventChip({
       {...attributes}
     >
       {task.startTime ? (
-        <span className="opacity-80">{task.startTime}</span>
+        <span className="tabular-nums opacity-80">{task.startTime}</span>
       ) : null}
       <span className="truncate">{task.title}</span>
     </button>
@@ -77,19 +77,19 @@ function MonthDayCell({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-0 flex-col gap-1 border-b border-r border-slate-100 p-1.5 last:border-r-0 ${
-        inMonth ? "bg-white" : "bg-slate-50"
-      } ${isOver ? "bg-sky-100/60" : ""}`}
+      className={`flex min-h-0 flex-col gap-1 border-b border-r border-zinc-100 p-1.5 last:border-r-0 ${
+        inMonth ? "bg-white" : "bg-zinc-50"
+      } ${isOver ? "bg-indigo-100/60" : ""}`}
     >
       <button
         type="button"
         onClick={() => onSelectDay?.(day)}
-        className={`self-start rounded-md px-1 text-xs font-semibold hover:bg-sky-50 ${
+        className={`self-start rounded-md px-1 text-xs font-semibold tabular-nums hover:bg-indigo-50 ${
           isToday
-            ? "bg-sky-500 text-white hover:bg-sky-500"
+            ? "bg-indigo-600 text-white hover:bg-indigo-600"
             : inMonth
-              ? "text-slate-900"
-              : "text-slate-300"
+              ? "text-zinc-900"
+              : "text-zinc-300"
         }`}
       >
         {format(day, "d")}
@@ -104,7 +104,7 @@ function MonthDayCell({
           />
         ))}
         {hiddenCount > 0 ? (
-          <p className="px-1 text-[10px] text-slate-400">他{hiddenCount}件</p>
+          <p className="px-1 text-[10px] text-zinc-400">他{hiddenCount}件</p>
         ) : null}
       </div>
     </div>
@@ -168,11 +168,11 @@ export function MonthCalendar({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="grid grid-cols-7 border-b border-slate-200">
+      <div className="grid grid-cols-7 border-b border-zinc-200">
         {weekdayLabels.map((label, index) => (
           <div
             key={`${label}-${index}`}
-            className="border-r border-slate-100 px-2 py-1.5 text-center text-[11px] font-medium text-slate-500 last:border-r-0"
+            className="border-r border-zinc-100 px-2 py-1.5 text-center text-[11px] font-medium text-zinc-500 last:border-r-0"
           >
             {label}
           </div>
