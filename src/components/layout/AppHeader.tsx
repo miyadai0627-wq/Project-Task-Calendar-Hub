@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, ListTodo, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListTodo, Plus, Settings } from "lucide-react";
 
 import { GoogleConnectButton } from "@/components/auth/GoogleConnectButton";
 import { CALENDAR_VIEW_MODES, type CalendarViewMode } from "@/lib/constants";
@@ -21,6 +21,7 @@ export function AppHeader({
   calendarView,
   onCalendarViewChange,
   onToggleTray,
+  onManageProjects,
 }: {
   projects: Project[];
   selectedProjectId: string;
@@ -36,6 +37,7 @@ export function AppHeader({
   calendarView: CalendarViewMode;
   onCalendarViewChange: (mode: CalendarViewMode) => void;
   onToggleTray?: () => void;
+  onManageProjects: () => void;
 }) {
   const activeProjects = projects.filter((project) => project.status === "active");
 
@@ -71,6 +73,15 @@ export function AppHeader({
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={onManageProjects}
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-indigo-50 hover:text-zinc-700"
+          aria-label="プロジェクト管理"
+          title="プロジェクト管理"
+        >
+          <Settings className="h-4 w-4" />
+        </button>
       </div>
       <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">
         <div className="flex shrink-0 items-center whitespace-nowrap rounded-lg border border-zinc-200 p-0.5">

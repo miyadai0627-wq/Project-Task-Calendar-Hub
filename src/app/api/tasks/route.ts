@@ -21,12 +21,12 @@ interface TaskInput {
 
 export async function GET() {
   const session = await auth();
-  if (!session?.googleAccountId) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
   const tasks = await prisma.task.findMany({
-    where: { userId: session.googleAccountId },
+    where: { userId: session.user.id },
     orderBy: { createdAt: "asc" },
   });
 
@@ -35,7 +35,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.googleAccountId) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
   const task = await prisma.task.create({
     data: {
-      userId: session.googleAccountId,
+      userId: session.user.id,
       projectId: body.projectId,
       title: body.title,
       description: body.description,

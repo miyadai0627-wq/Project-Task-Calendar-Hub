@@ -2,6 +2,7 @@ import { google } from "googleapis";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
+import { getValidGoogleAccessToken } from "@/lib/google-account";
 
 const TIME_ZONE = "Asia/Tokyo";
 
@@ -22,7 +23,11 @@ function getCalendarClient(accessToken: string) {
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.accessToken) {
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  }
+  const accessToken = await getValidGoogleAccessToken(session.user.id);
+  if (!accessToken) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
@@ -33,7 +38,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 
-  const calendar = getCalendarClient(session.accessToken);
+  const calendar = getCalendarClient(accessToken);
   const requestBody = {
     summary: title,
     description,
@@ -62,7 +67,11 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const session = await auth();
-  if (!session?.accessToken) {
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  }
+  const accessToken = await getValidGoogleAccessToken(session.user.id);
+  if (!accessToken) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
@@ -71,7 +80,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "missing_event_id" }, { status: 400 });
   }
 
-  const calendar = getCalendarClient(session.accessToken);
+  const calendar = getCalendarClient(accessToken);
 
   try {
     await calendar.events.delete({ calendarId: "primary", eventId: googleEventId });

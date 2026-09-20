@@ -25,13 +25,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
-  if (!session?.googleAccountId) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
   const { id } = await params;
 
   const existing = await prisma.task.findUnique({ where: { id } });
-  if (!existing || existing.userId !== session.googleAccountId) {
+  if (!existing || existing.userId !== session.user.id) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
@@ -59,13 +59,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
-  if (!session?.googleAccountId) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
   const { id } = await params;
 
   const existing = await prisma.task.findUnique({ where: { id } });
-  if (!existing || existing.userId !== session.googleAccountId) {
+  if (!existing || existing.userId !== session.user.id) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 

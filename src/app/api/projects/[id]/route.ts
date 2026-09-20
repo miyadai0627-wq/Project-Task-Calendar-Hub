@@ -2,15 +2,14 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { serializeMilestone } from "@/lib/serialize-milestone";
-import type { MilestoneStatus } from "@/types";
+import { serializeProject } from "@/lib/serialize-project";
+import type { ProjectStatus } from "@/types";
 
-interface MilestonePatchInput {
-  projectId?: string;
-  title?: string;
-  startDate?: string;
-  endDate?: string;
-  status?: MilestoneStatus;
+interface ProjectPatchInput {
+  name?: string;
+  color?: string;
+  status?: ProjectStatus;
+  order?: number;
 }
 
 export async function PATCH(
@@ -23,19 +22,19 @@ export async function PATCH(
   }
   const { id } = await params;
 
-  const existing = await prisma.milestone.findUnique({ where: { id } });
+  const existing = await prisma.project.findUnique({ where: { id } });
   if (!existing || existing.userId !== session.user.id) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const patch = (await request.json()) as MilestonePatchInput;
+  const patch = (await request.json()) as ProjectPatchInput;
 
-  const milestone = await prisma.milestone.update({
+  const project = await prisma.project.update({
     where: { id },
     data: patch,
   });
 
-  return NextResponse.json(serializeMilestone(milestone));
+  return NextResponse.json(serializeProject(project));
 }
 
 export async function DELETE(
@@ -48,11 +47,27 @@ export async function DELETE(
   }
   const { id } = await params;
 
-  const existing = await prisma.milestone.findUnique({ where: { id } });
+  const existing = await prisma.project.findUnique({ where: { id } });
   if (!existing || existing.userId !== session.user.id) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  await prisma.milestone.delete({ where: { id } });
+  const [taskCount, milestoneCount] = await Promise.all([
+    prisma.task.count({ where: { projectId: id } }),
+    prisma.milestone.count({ where: { projectId: id } }),
+  ]);
+
+  if (taskCount > 0 || milestoneCount > 0) {
+    return NextResponse.json(
+      {
+        error: "project_not_empty",
+        taskCount,
+        milestoneCount,
+      },
+      { status: 409 },
+    );
+  }
+
+  await prisma.project.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

@@ -15,6 +15,8 @@ import {
 import { MonthCalendar } from "@/components/calendar/MonthCalendar";
 import { VerticalCalendar } from "@/components/calendar/VerticalCalendar";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { ProjectFormDialog } from "@/components/projects/ProjectFormDialog";
+import { ProjectManagerDialog } from "@/components/projects/ProjectManagerDialog";
 import { MilestoneFormDialog } from "@/components/timeline/MilestoneFormDialog";
 import { MilestoneTimeline } from "@/components/timeline/MilestoneTimeline";
 import { TaskFormDialog } from "@/components/todo/TaskFormDialog";
@@ -42,10 +44,11 @@ import type {
 import { useMilestoneStore } from "@/store/useMilestoneStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { useTaskStore } from "@/store/useTaskStore";
-import type { Milestone, Task } from "@/types";
+import type { Milestone, Project, Task } from "@/types";
 
 type TaskModalState = { mode: "create" | "edit"; task?: Task };
 type MilestoneModalState = { mode: "create" | "edit"; milestone?: Milestone };
+type ProjectModalState = { mode: "create" | "edit"; project?: Project };
 type DragData = { source: "tray" | "event"; task: Task };
 type ViewMode = "calendar" | "timeline";
 
@@ -59,6 +62,9 @@ export function AppShell() {
   const [activeTab, setActiveTab] = useState<TodoTrayTabId>("ready");
   const [taskModal, setTaskModal] = useState<TaskModalState | null>(null);
   const [milestoneModal, setMilestoneModal] = useState<MilestoneModalState | null>(null);
+  const [isProjectManagerOpen, setIsProjectManagerOpen] = useState(false);
+  const [projectModal, setProjectModal] = useState<ProjectModalState | null>(null);
+  const [projectDeleteError, setProjectDeleteError] = useState<string | null>(null);
   const [activeDrag, setActiveDrag] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("calendar");
   const [calendarView, setCalendarView] = useState<CalendarViewMode>("week");
@@ -80,6 +86,9 @@ export function AppShell() {
 
   const projects = useProjectStore((state) => state.projects);
   const fetchProjects = useProjectStore((state) => state.fetchProjects);
+  const addProject = useProjectStore((state) => state.addProject);
+  const updateProject = useProjectStore((state) => state.updateProject);
+  const deleteProject = useProjectStore((state) => state.deleteProject);
 
   useEffect(() => {
     fetchTasks();
@@ -134,6 +143,11 @@ export function AppShell() {
 
   function closeMilestoneModal() {
     setMilestoneModal(null);
+  }
+
+  function closeProjectModal() {
+    setProjectModal(null);
+    setProjectDeleteError(null);
   }
 
   function handlePrev() {
@@ -272,6 +286,7 @@ export function AppShell() {
           calendarView={calendarView}
           onCalendarViewChange={setCalendarView}
           onToggleTray={() => setIsTrayOpen((current) => !current)}
+          onManageProjects={() => setIsProjectManagerOpen(true)}
         />
         <div className="relative flex min-h-0 flex-1">
           {!hasLoaded ? (
@@ -395,6 +410,44 @@ export function AppShell() {
             onDelete={(id) => {
               deleteMilestone(id);
               closeMilestoneModal();
+            }}
+          />
+        ) : null}
+
+        {isProjectManagerOpen ? (
+          <ProjectManagerDialog
+            projects={projects}
+            onClose={() => setIsProjectManagerOpen(false)}
+            onNew={() => setProjectModal({ mode: "create" })}
+            onEdit={(project) => setProjectModal({ mode: "edit", project })}
+          />
+        ) : null}
+
+        {projectModal ? (
+          <ProjectFormDialog
+            mode={projectModal.mode}
+            project={projectModal.project}
+            deleteError={projectDeleteError}
+            onClose={closeProjectModal}
+            onSubmit={(draft) => {
+              if (projectModal.mode === "create") {
+                addProject(draft);
+              } else if (projectModal.project) {
+                updateProject(projectModal.project.id, draft);
+              }
+              closeProjectModal();
+            }}
+            onDelete={async (id) => {
+              const result = await deleteProject(id);
+              if (result.ok) {
+                closeProjectModal();
+              } else {
+                setProjectDeleteError(
+                  result.error === "project_not_empty"
+                    ? "タスクまたはマイルストーンが紐づいているため削除できません"
+                    : "削除に失敗しました",
+                );
+              }
             }}
           />
         ) : null}

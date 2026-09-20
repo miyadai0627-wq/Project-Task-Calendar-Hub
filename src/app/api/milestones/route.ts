@@ -15,12 +15,12 @@ interface MilestoneInput {
 
 export async function GET() {
   const session = await auth();
-  if (!session?.googleAccountId) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
   const milestones = await prisma.milestone.findMany({
-    where: { userId: session.googleAccountId },
+    where: { userId: session.user.id },
     orderBy: { startDate: "asc" },
   });
 
@@ -29,7 +29,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.googleAccountId) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
   const milestone = await prisma.milestone.create({
     data: {
-      userId: session.googleAccountId,
+      userId: session.user.id,
       projectId: body.projectId,
       title: body.title,
       startDate: body.startDate,
