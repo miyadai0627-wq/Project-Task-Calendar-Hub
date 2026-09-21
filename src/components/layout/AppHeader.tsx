@@ -42,7 +42,7 @@ export function AppHeader({
   const activeProjects = projects.filter((project) => project.status === "active");
 
   return (
-    <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4">
+    <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3 pb-2 pt-[max(2.5rem,env(safe-area-inset-top))] sm:px-4">
       <div className="flex min-w-0 items-center gap-2">
         {onToggleTray ? (
           <button
@@ -83,15 +83,15 @@ export function AppHeader({
           <Settings className="h-4 w-4" />
         </button>
       </div>
-      <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">
-        <div className="flex shrink-0 items-center whitespace-nowrap rounded-lg border border-zinc-200 p-0.5">
+      <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+        <div className="flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-zinc-100 p-1">
           <button
             type="button"
             onClick={() => onViewModeChange("calendar")}
-            className={`h-7 rounded-md px-3 text-xs font-medium transition-colors ${
+            className={`h-7 rounded-full px-3 text-xs font-medium transition-all ${
               viewMode === "calendar"
-                ? "bg-indigo-600 text-white"
-                : "text-zinc-600 hover:bg-indigo-50"
+                ? "bg-white text-zinc-900 shadow-sm"
+                : "text-zinc-500 hover:text-zinc-800"
             }`}
           >
             カレンダー
@@ -99,26 +99,26 @@ export function AppHeader({
           <button
             type="button"
             onClick={() => onViewModeChange("timeline")}
-            className={`h-7 rounded-md px-3 text-xs font-medium transition-colors ${
+            className={`h-7 rounded-full px-3 text-xs font-medium transition-all ${
               viewMode === "timeline"
-                ? "bg-indigo-600 text-white"
-                : "text-zinc-600 hover:bg-indigo-50"
+                ? "bg-white text-zinc-900 shadow-sm"
+                : "text-zinc-500 hover:text-zinc-800"
             }`}
           >
             タイムライン
           </button>
         </div>
         {viewMode === "calendar" ? (
-          <div className="flex shrink-0 items-center whitespace-nowrap rounded-lg border border-zinc-200 p-0.5">
+          <div className="flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-zinc-100 p-1">
             {CALENDAR_VIEW_MODES.map((mode) => (
               <button
                 key={mode.id}
                 type="button"
                 onClick={() => onCalendarViewChange(mode.id)}
-                className={`h-7 rounded-md px-2.5 text-xs font-medium transition-colors ${
+                className={`h-7 rounded-full px-2.5 text-xs font-medium transition-all ${
                   calendarView === mode.id
-                    ? "bg-indigo-600 text-white"
-                    : "text-zinc-600 hover:bg-indigo-50"
+                    ? "bg-white text-zinc-900 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-800"
                 }`}
               >
                 {mode.label}
@@ -128,11 +128,12 @@ export function AppHeader({
         ) : null}
         {viewMode === "calendar" ? (
           <>
-            <div className="flex shrink-0 items-center whitespace-nowrap rounded-lg border border-zinc-200 p-0.5">
+            <div className="hidden h-5 w-px shrink-0 bg-zinc-200 sm:block" />
+            <div className="flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-zinc-100 p-1">
               <button
                 type="button"
                 onClick={onPrev}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-600 hover:bg-indigo-50"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-white hover:text-zinc-900 hover:shadow-sm"
                 aria-label="前へ"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -140,14 +141,14 @@ export function AppHeader({
               <button
                 type="button"
                 onClick={onToday}
-                className="h-7 rounded-md px-3 text-xs font-medium text-zinc-700 hover:bg-indigo-50"
+                className="h-7 rounded-full px-3 text-xs font-medium text-zinc-700 transition-colors hover:bg-white hover:text-zinc-900 hover:shadow-sm"
               >
                 {todayLabel}
               </button>
               <button
                 type="button"
                 onClick={onNext}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-600 hover:bg-indigo-50"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-white hover:text-zinc-900 hover:shadow-sm"
                 aria-label="次へ"
               >
                 <ChevronRight className="h-4 w-4" />
