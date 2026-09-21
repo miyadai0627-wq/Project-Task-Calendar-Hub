@@ -42,7 +42,7 @@ export function AppHeader({
   const activeProjects = projects.filter((project) => project.status === "active");
 
   return (
-    <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3 py-2 sm:px-4">
+    <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4">
       <div className="flex min-w-0 items-center gap-2">
         {onToggleTray ? (
           <button

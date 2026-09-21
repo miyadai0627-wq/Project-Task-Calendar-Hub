@@ -263,7 +263,7 @@ export function AppShell() {
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveDrag(null)}
     >
-      <div className="flex h-dvh flex-col bg-zinc-50 text-zinc-900">
+      <div className="flex h-dvh flex-col bg-zinc-50 pb-[env(safe-area-inset-bottom)] text-zinc-900">
         <AppHeader
           projects={projects}
           selectedProjectId={selectedProjectId}
